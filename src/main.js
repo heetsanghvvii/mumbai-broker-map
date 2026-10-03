@@ -57,11 +57,11 @@ function showError(text) {
 
 function renderPopular() {
   const row = $('popular');
-  for (const q of TRY_QUERIES) {
+  for (const [label, q] of TRY_QUERIES) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'chip';
-    b.textContent = q;
+    b.textContent = label;
     b.addEventListener('click', () => runQuery(q));
     row.append(b);
   }
