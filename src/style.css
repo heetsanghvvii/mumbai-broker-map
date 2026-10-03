@@ -98,9 +98,12 @@ button {
 }
 
 /* ---------- map ---------- */
+/* Google Maps sets an inline position: relative on its container, so pin the box with !important and explicit size. */
 .map {
-  position: fixed;
+  position: fixed !important;
   inset: 0;
+  width: 100%;
+  height: 100%;
   background: var(--hair);
 }
 

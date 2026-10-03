@@ -9,8 +9,10 @@ export function distanceKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-export function formatKm(km) {
-  return km < 10 ? `${km.toFixed(2)} km` : `${km.toFixed(1)} km`;
+export function formatDistance(km) {
+  if (km < 0.05) return 'Under 50 m';
+  if (km < 1) return `${Math.round(km * 100) * 10} m`;
+  return `${km.toFixed(1)} km`;
 }
 
 /**

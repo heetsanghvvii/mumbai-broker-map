@@ -1,6 +1,6 @@
 import './style.css';
 import { API_KEY, CLAIM_FORM_URL, MIN_RESULTS, RADII_M, TRY_QUERIES } from './config.js';
-import { distanceKm, formatKm, pickRadius, prefersReducedMotion, whatsappNumber } from './geo.js';
+import { distanceKm, formatDistance, pickRadius, prefersReducedMotion, whatsappNumber } from './geo.js';
 
 const $ = (id) => document.getElementById(id);
 const input = $('search-input');
@@ -218,7 +218,8 @@ async function choose(i) {
       .sort((a, b) => a.distanceKm - b.distanceKm);
     const { radiusM, items } = pickRadius(sorted, RADII_M, MIN_RESULTS);
 
-    current = { place, radiusM, brokers: items, openId: null };
+    // Nearby Search returns at most 20, so a full page means there may be more just as close.
+    current = { place, radiusM, brokers: items, capped: raw.length >= 20 && items.length === raw.length, openId: null };
     provider.showSearch(center, place.name, radiusM, mapPadding());
     provider.showBrokers(items, (id) => select(id, 'map'));
     renderResults();
@@ -236,7 +237,7 @@ async function choose(i) {
 }
 
 function renderResults() {
-  const { brokers, radiusM, place } = current;
+  const { brokers, radiusM, place, capped } = current;
   const km = radiusM / 1000;
   summaryEl.className = 'summary';
   summaryEl.innerHTML = '';
@@ -258,7 +259,8 @@ function renderResults() {
   const ring = document.createElement('span');
   ring.className = 'radius';
   ring.textContent = `${km} km`;
-  line.append(count, ` ${brokers.length === 1 ? 'broker' : 'brokers'} within `, ring, ' of ', name);
+  if (capped) line.append(count, ' nearest brokers, all within ', ring, ' of ', name);
+  else line.append(count, ` ${brokers.length === 1 ? 'broker' : 'brokers'} within `, ring, ' of ', name);
   summaryEl.append(line);
   if (radiusM > RADII_M[0]) {
     const sub = document.createElement('p');
@@ -291,7 +293,7 @@ function row(b, i) {
         <span class="row-name"></span>
         <span class="row-addr"></span>
       </span>
-      <span class="row-dist">${formatKm(b.distanceKm)}</span>
+      <span class="row-dist">${formatDistance(b.distanceKm)}</span>
     </button>
     <div class="row-more" hidden>
       <div class="row-meta"></div>
