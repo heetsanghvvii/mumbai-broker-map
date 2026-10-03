@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MUMBAI_CENTER } from '../config.js';
 import { brokerMarkerEl, pinMarkerEl } from './markers.js';
+import { growRadius, offsetCenter, prefersReducedMotion } from '../geo.js';
 
 const BUILDINGS = [
   { name: 'Hiranandani Gardens', area: 'Powai', lat: 19.1176, lng: 72.906 },
@@ -50,7 +51,7 @@ function sampleBrokers(center) {
 }
 
 export async function createPreviewProvider(el) {
-  const map = L.map(el, { zoomControl: true, attributionControl: true }).setView(
+  const map = L.map(el, { zoomControl: false, attributionControl: true, zoomSnap: 0.25 }).setView(
     [MUMBAI_CENTER.lat, MUMBAI_CENTER.lng],
     11,
   );
@@ -103,19 +104,30 @@ export async function createPreviewProvider(el) {
       };
     },
 
-    showSearch(center, name, radiusM) {
+    showSearch(center, name, radiusM, pad) {
       pin?.remove();
       circle?.remove();
       pin = L.marker([center.lat, center.lng], { icon: icon(pinMarkerEl(name), [0, 0]), zIndexOffset: 1000 }).addTo(map);
       circle = L.circle([center.lat, center.lng], {
         radius: radiusM,
-        color: '#f0a20b',
-        weight: 1.5,
-        fillColor: '#f0a20b',
-        fillOpacity: 0.07,
+        color: '#efa516',
+        weight: 2,
+        fillColor: '#efa516',
+        fillOpacity: 0.08,
         interactive: false,
       }).addTo(map);
-      map.fitBounds(circle.getBounds(), { padding: [24, 24] });
+      this.refit(pad);
+      growRadius((r) => circle.setRadius(r), radiusM);
+    },
+
+    refit(pad) {
+      if (!circle) return;
+      const b = L.latLng(circle.getLatLng()).toBounds(circle.getRadius() * 2);
+      map.flyToBounds(b, {
+        paddingTopLeft: [pad.left, pad.top],
+        paddingBottomRight: [pad.right, pad.bottom],
+        duration: prefersReducedMotion() ? 0 : 0.8,
+      });
     },
 
     showBrokers(list, onSelect) {
@@ -130,12 +142,16 @@ export async function createPreviewProvider(el) {
       });
     },
 
-    highlight(id, pan) {
+    highlight(id, pan, pad) {
       for (const m of markers) {
         const on = m._id === id;
         m._node.classList.toggle('is-active', on);
         m.setZIndexOffset(on ? 900 : 0);
-        if (on && pan) map.panTo(m.getLatLng());
+        if (on && pan) {
+          const ll = m.getLatLng();
+          const c = offsetCenter({ lat: ll.lat, lng: ll.lng }, map.getZoom(), pad);
+          map.panTo([c.lat, c.lng], { animate: !prefersReducedMotion(), duration: 0.5 });
+        }
       }
     },
   };

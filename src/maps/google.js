@@ -1,5 +1,6 @@
 import { API_KEY, MAP_ID, MUMBAI_BOUNDS, MUMBAI_CENTER } from '../config.js';
 import { brokerMarkerEl, pinMarkerEl } from './markers.js';
+import { growRadius, offsetCenter } from '../geo.js';
 
 // Google's ToS: nothing returned by Places is stored or cached beyond place IDs.
 // Everything below lives in memory for the current page only.
@@ -44,9 +45,8 @@ export async function createGoogleProvider(el) {
     mapId: MAP_ID,
     colorScheme: core.ColorScheme?.FOLLOW_SYSTEM,
     disableDefaultUI: true,
-    zoomControl: true,
     clickableIcons: false,
-    gestureHandling: matchMedia('(max-width: 860px)').matches ? 'cooperative' : 'greedy',
+    gestureHandling: 'greedy',
   });
 
   let token = new AutocompleteSessionToken();
@@ -126,22 +126,28 @@ export async function createGoogleProvider(el) {
       };
     },
 
-    showSearch(center, name, radiusM) {
+    showSearch(center, name, radiusM, pad) {
       if (pin) pin.map = null;
       pin = new AdvancedMarkerElement({ map, position: center, content: pinMarkerEl(name), title: name, zIndex: 1000 });
-      circle?.setMap(null);
-      circle = new Circle({
-        map,
-        center,
-        radius: radiusM,
-        clickable: false,
-        strokeColor: '#f0a20b',
-        strokeOpacity: 0.9,
-        strokeWeight: 1.5,
-        fillColor: '#f0a20b',
-        fillOpacity: 0.07,
-      });
-      map.fitBounds(circle.getBounds(), 24);
+      if (!circle) {
+        circle = new Circle({
+          map,
+          clickable: false,
+          strokeColor: '#efa516',
+          strokeOpacity: 0.95,
+          strokeWeight: 2,
+          fillColor: '#efa516',
+          fillOpacity: 0.08,
+        });
+      }
+      circle.setCenter(center);
+      circle.setRadius(radiusM);
+      map.fitBounds(circle.getBounds(), pad);
+      growRadius((r) => circle.setRadius(r), radiusM);
+    },
+
+    refit(pad) {
+      if (circle) map.fitBounds(circle.getBounds(), pad);
     },
 
     showBrokers(list, onSelect) {
@@ -155,12 +161,16 @@ export async function createGoogleProvider(el) {
       });
     },
 
-    highlight(id, pan) {
+    highlight(id, pan, pad) {
       for (const m of markers) {
         const on = m._id === id;
         m.content.classList.toggle('is-active', on);
         m.zIndex = on ? 999 : null;
-        if (on && pan) map.panTo(m.position);
+        if (on && pan) {
+          const p = m.position;
+          const pos = { lat: typeof p.lat === 'function' ? p.lat() : p.lat, lng: typeof p.lng === 'function' ? p.lng() : p.lng };
+          map.panTo(offsetCenter(pos, map.getZoom(), pad));
+        }
       }
     },
   };

@@ -1,27 +1,32 @@
 import './style.css';
 import { API_KEY, CLAIM_FORM_URL, MIN_RESULTS, RADII_M, TRY_QUERIES } from './config.js';
-import { distanceKm, formatKm, pickRadius, whatsappNumber } from './geo.js';
+import { distanceKm, formatKm, pickRadius, prefersReducedMotion, whatsappNumber } from './geo.js';
 
 const $ = (id) => document.getElementById(id);
 const input = $('search-input');
 const list = $('suggestions');
-const combobox = input.closest('.search');
-const statusEl = $('status');
+const searchBox = $('search');
+const clearBtn = $('clear');
+const sheet = $('sheet');
+const sheetBody = $('sheet-body');
+const summaryEl = $('summary');
 const resultsEl = $('results');
-const emptyEl = $('empty');
-const mapNote = $('map-note');
+const introEl = $('intro');
 
 $('claim-link').href = CLAIM_FORM_URL;
+
+const desktop = matchMedia('(min-width: 900px)');
 
 let provider = null;
 let suggestions = [];
 let activeIndex = -1;
-let searchSeq = 0;
-let current = { brokers: [] };
+let suggestSeq = 0;
+let current = null;
 
 // ---------- boot ----------
 
 async function boot() {
+  renderPopular();
   try {
     if (API_KEY) {
       const { createGoogleProvider } = await import('./maps/google.js');
@@ -29,30 +34,29 @@ async function boot() {
     } else {
       const { createPreviewProvider } = await import('./maps/preview.js');
       provider = await createPreviewProvider($('map'));
-      showNote('Preview mode: sample buildings and made-up brokers.');
-      document.body.classList.add('is-preview');
+      $('preview-note').hidden = false;
     }
   } catch (err) {
     console.error(err);
-    showNote(err.message || 'The map could not load.');
+    showError(err.message || 'The map could not load. Refresh to try again.');
+    return;
   }
-  renderTryChips();
   const q = new URLSearchParams(location.search).get('q');
   if (q) runQuery(q);
 }
 
 document.addEventListener('maps-auth-failure', () => {
-  showNote('Google rejected the API key. Check that it is valid and allowed on this website.');
-  setStatus('Search is unavailable right now.', 'error');
+  showError('The map key was rejected, so search is off for now. If you run this site, check the key in Google Cloud.');
 });
 
-function showNote(text) {
-  mapNote.textContent = text;
-  mapNote.hidden = false;
+function showError(text) {
+  summaryEl.hidden = false;
+  summaryEl.className = 'summary is-error';
+  summaryEl.textContent = text;
 }
 
-function renderTryChips() {
-  const row = $('try-row');
+function renderPopular() {
+  const row = $('popular');
   for (const q of TRY_QUERIES) {
     const b = document.createElement('button');
     b.type = 'button';
@@ -63,25 +67,37 @@ function renderTryChips() {
   }
 }
 
-// Fill the box and pick the top suggestion: used by chips and ?q= links.
 async function runQuery(q) {
   input.value = q;
+  syncClear();
   await fetchSuggestions(q);
   if (suggestions[0]) choose(0);
+}
+
+// ---------- map padding: keep pins clear of the panel / sheet ----------
+
+function mapPadding() {
+  const top = document.querySelector('.top').getBoundingClientRect().bottom + 16;
+  if (desktop.matches) {
+    const r = sheet.getBoundingClientRect();
+    return { top: 24, left: r.right + 24, right: 24, bottom: 24 };
+  }
+  return { top, left: 20, right: 20, bottom: innerHeight - sheet.getBoundingClientRect().top + 16 };
 }
 
 // ---------- autocomplete ----------
 
 let debounce;
 input.addEventListener('input', () => {
+  syncClear();
   clearTimeout(debounce);
   const q = input.value.trim();
   if (q.length < 2) return closeList();
-  debounce = setTimeout(() => fetchSuggestions(q), 220);
+  debounce = setTimeout(() => fetchSuggestions(q), 200);
 });
 
 input.addEventListener('keydown', (e) => {
-  if (list.hidden) return;
+  if (list.hidden || !suggestions.length) return;
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     e.preventDefault();
     const n = suggestions.length;
@@ -89,27 +105,40 @@ input.addEventListener('keydown', (e) => {
     paintActive();
   } else if (e.key === 'Enter') {
     e.preventDefault();
-    choose(activeIndex >= 0 ? activeIndex : 0);
+    choose(Math.max(activeIndex, 0));
   } else if (e.key === 'Escape') {
     closeList();
   }
 });
 
-input.addEventListener('focus', () => suggestions.length && input.value.trim().length >= 2 && openList());
-document.addEventListener('click', (e) => !combobox.contains(e.target) && closeList());
+input.addEventListener('focus', () => {
+  if (suggestions.length && input.value.trim().length >= 2) openList();
+});
+document.addEventListener('pointerdown', (e) => !searchBox.contains(e.target) && closeList());
+
+clearBtn.addEventListener('click', () => {
+  input.value = '';
+  syncClear();
+  closeList();
+  input.focus();
+});
+
+function syncClear() {
+  clearBtn.hidden = !input.value;
+}
 
 async function fetchSuggestions(q) {
   if (!provider) return;
-  const seq = ++searchSeq;
+  const seq = ++suggestSeq;
   try {
     const res = await provider.suggest(q);
-    if (seq !== searchSeq) return;
+    if (seq !== suggestSeq) return;
     suggestions = res;
     activeIndex = -1;
     renderList(q);
   } catch (err) {
     console.error(err);
-    if (seq === searchSeq) setStatus('Suggestions failed to load. Try again in a moment.', 'error');
+    if (seq === suggestSeq) showError('Suggestions didn’t load. Check your connection and type again.');
   }
 }
 
@@ -118,13 +147,13 @@ function renderList(q) {
   if (!suggestions.length) {
     const li = document.createElement('li');
     li.className = 'sugg-empty';
-    li.textContent = `No Mumbai places match “${q}”.`;
+    li.textContent = `Nothing in Mumbai matches “${q}”. Try the society or project name.`;
     list.append(li);
   }
   suggestions.forEach((s, i) => {
     const li = document.createElement('li');
     li.id = `sugg-${i}`;
-    li.role = 'option';
+    li.setAttribute('role', 'option');
     li.className = 'sugg';
     const main = document.createElement('span');
     main.className = 'sugg-main';
@@ -133,7 +162,7 @@ function renderList(q) {
     sec.className = 'sugg-sec';
     sec.textContent = s.secondary;
     li.append(main, sec);
-    li.addEventListener('mousedown', (e) => e.preventDefault());
+    li.addEventListener('pointerdown', (e) => e.preventDefault());
     li.addEventListener('click', () => choose(i));
     list.append(li);
   });
@@ -142,16 +171,17 @@ function renderList(q) {
 
 function paintActive() {
   [...list.children].forEach((li, i) => li.setAttribute('aria-selected', String(i === activeIndex)));
-  input.setAttribute('aria-activedescendant', activeIndex >= 0 ? `sugg-${activeIndex}` : '');
+  if (activeIndex >= 0) input.setAttribute('aria-activedescendant', `sugg-${activeIndex}`);
+  else input.removeAttribute('aria-activedescendant');
 }
 
 function openList() {
   list.hidden = false;
-  combobox.setAttribute('aria-expanded', 'true');
+  input.setAttribute('aria-expanded', 'true');
 }
 function closeList() {
   list.hidden = true;
-  combobox.setAttribute('aria-expanded', 'false');
+  input.setAttribute('aria-expanded', 'false');
 }
 
 // ---------- search ----------
@@ -161,26 +191,30 @@ async function choose(i) {
   if (!s) return;
   closeList();
   input.value = s.main;
+  syncClear();
   input.blur();
-  emptyEl.hidden = true;
+  introEl.hidden = true;
+  summaryEl.hidden = false;
+  summaryEl.className = 'summary';
+  summaryEl.innerHTML = `<p class="summary-line">Looking around <b></b>…</p>`;
+  summaryEl.querySelector('b').textContent = s.main;
   resultsEl.replaceChildren(...skeletons(4));
-  setStatus(`Finding brokers near ${s.main}…`);
+  snapSheet('half');
 
   try {
     const place = await provider.resolve(s);
     const center = { lat: place.lat, lng: place.lng };
-    provider.showSearch(center, place.name, RADII_M[0]);
-
     const raw = await provider.nearby(center, RADII_M[RADII_M.length - 1]);
-    const withDist = raw
+    const sorted = raw
       .map((b) => ({ ...b, distanceKm: distanceKm(center, b) }))
       .sort((a, b) => a.distanceKm - b.distanceKm);
-    const { radiusM, items } = pickRadius(withDist, RADII_M, MIN_RESULTS);
+    const { radiusM, items } = pickRadius(sorted, RADII_M, MIN_RESULTS);
 
-    current = { place, center, radiusM, brokers: items };
-    provider.showSearch(center, place.name, radiusM);
-    provider.showBrokers(items, select);
+    current = { place, center, radiusM, brokers: items, openId: null };
+    provider.showSearch(center, place.name, radiusM, mapPadding());
+    provider.showBrokers(items, (id) => select(id, 'map'));
     renderResults();
+    sheetBody.scrollTop = 0;
 
     const url = new URL(location.href);
     url.searchParams.set('q', place.name);
@@ -188,89 +222,103 @@ async function choose(i) {
   } catch (err) {
     console.error(err);
     resultsEl.replaceChildren();
-    setStatus('Something went wrong while searching. Try again.', 'error');
+    showError('The search didn’t go through. Pick the building again to retry.');
   }
-}
-
-function setStatus(html, tone = '') {
-  statusEl.className = `status ${tone}`;
-  statusEl.innerHTML = html;
 }
 
 function renderResults() {
   const { brokers, radiusM, place } = current;
   const km = radiusM / 1000;
-  const widened = radiusM > RADII_M[0];
-  const name = escapeHtml(place.name);
+  summaryEl.className = 'summary';
+  summaryEl.innerHTML = '';
+  const line = document.createElement('p');
+  line.className = 'summary-line';
+  const name = document.createElement('b');
+  name.textContent = place.name;
+
   if (!brokers.length) {
-    setStatus(`No real estate agencies on Google Maps within ${km} km of <b>${name}</b>.`);
+    line.append(`No real estate agencies on Google Maps within ${km} km of `, name, '.');
+    summaryEl.append(line);
     resultsEl.replaceChildren();
     return;
   }
-  setStatus(
-    `<span class="status-count">${brokers.length}</span> broker${brokers.length === 1 ? '' : 's'} within ` +
-      `<span class="radius-pill">${km} km</span> of <b>${name}</b>` +
-      (widened ? `<span class="status-sub">Fewer than ${MIN_RESULTS} within 1 km, so we widened the circle.</span>` : ''),
-  );
-  resultsEl.replaceChildren(...brokers.map(card));
+
+  const count = document.createElement('span');
+  count.className = 'summary-count';
+  count.textContent = brokers.length;
+  const ring = document.createElement('span');
+  ring.className = 'radius';
+  ring.textContent = `${km} km`;
+  line.append(count, ` ${brokers.length === 1 ? 'broker' : 'brokers'} within `, ring, ' of ', name);
+  summaryEl.append(line);
+  if (radiusM > RADII_M[0]) {
+    const sub = document.createElement('p');
+    sub.className = 'summary-sub';
+    sub.textContent = `Fewer than ${MIN_RESULTS} within 1 km, so the circle grew to ${km} km.`;
+    summaryEl.append(sub);
+  }
+  resultsEl.replaceChildren(...brokers.map(row));
 }
 
 function skeletons(n) {
   return Array.from({ length: n }, () => {
     const li = document.createElement('li');
-    li.className = 'card skeleton';
-    li.innerHTML = '<span></span><span></span><span></span>';
+    li.className = 'row is-skeleton';
+    li.innerHTML = '<span class="sk sk-num"></span><span class="sk-lines"><span class="sk"></span><span class="sk"></span></span>';
     return li;
   });
 }
 
-// ---------- broker cards ----------
+// ---------- broker rows ----------
 
-function card(b, i) {
+function row(b, i) {
   const li = document.createElement('li');
-  li.className = 'card';
+  li.className = 'row';
   li.dataset.id = b.id;
-  li.tabIndex = 0;
   li.innerHTML = `
-    <div class="card-head">
-      <span class="card-num" aria-hidden="true">${i + 1}</span>
-      <div class="card-title">
-        <h2 class="card-name"></h2>
-        <p class="card-addr"></p>
+    <button type="button" class="row-main" aria-expanded="false">
+      <span class="row-num" aria-hidden="true">${i + 1}</span>
+      <span class="row-text">
+        <span class="row-name"></span>
+        <span class="row-addr"></span>
+      </span>
+      <span class="row-dist">${formatKm(b.distanceKm)}</span>
+    </button>
+    <div class="row-more" hidden>
+      <div class="row-meta"></div>
+      <div class="row-actions">
+        <button type="button" class="btn btn-primary js-details">Show phone and rating</button>
+        <a class="btn btn-quiet" target="_blank" rel="noopener">Open in Google Maps</a>
       </div>
-      <span class="card-dist">${formatKm(b.distanceKm)}</span>
-    </div>
-    <div class="card-meta" hidden></div>
-    <div class="card-actions">
-      <button type="button" class="btn btn-soft js-details">Show phone &amp; rating</button>
-      <a class="btn btn-link" target="_blank" rel="noopener">Open in Google Maps ↗</a>
     </div>`;
-  li.querySelector('.card-name').textContent = b.name;
-  li.querySelector('.card-addr').textContent = b.address;
-  li.querySelector('.btn-link').href = b.mapsUrl;
-  li.querySelector('.js-details').addEventListener('click', (e) => {
-    e.stopPropagation();
-    loadDetails(b, li);
-  });
-  li.addEventListener('click', (e) => {
-    if (e.target.closest('a,button')) return;
-    select(b.id, 'list');
-  });
-  li.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && e.target === li) select(b.id, 'list');
-  });
+  li.querySelector('.row-name').textContent = b.name;
+  li.querySelector('.row-addr').textContent = b.address;
+  li.querySelector('.btn-quiet').href = b.mapsUrl;
+  li.querySelector('.row-main').addEventListener('click', () => select(b.id, 'list'));
+  li.querySelector('.js-details').addEventListener('click', () => loadDetails(b, li));
   return li;
 }
 
 function select(id, from) {
-  for (const el of resultsEl.children) el.classList.toggle('is-active', el.dataset.id === id);
-  provider.highlight(id, from === 'list');
-  if (from === 'map') {
-    resultsEl.querySelector(`[data-id="${CSS.escape(id)}"]`)?.scrollIntoView({ behavior: smooth(), block: 'nearest' });
+  if (!current) return;
+  current.openId = id;
+  for (const el of resultsEl.children) {
+    const on = el.dataset.id === id;
+    el.classList.toggle('is-open', on);
+    el.querySelector('.row-main')?.setAttribute('aria-expanded', String(on));
+    const more = el.querySelector('.row-more');
+    if (more) more.hidden = !on;
   }
+  if (from === 'map' && !desktop.matches && sheetState === 'peek') snapSheet('half');
+  if (from === 'list' && !desktop.matches && sheetState === 'full') snapSheet('half');
+  // Let the sheet settle before measuring how much map is visible.
+  setTimeout(() => {
+    provider.highlight(id, true, mapPadding());
+    resultsEl
+      .querySelector(`[data-id="${CSS.escape(id)}"]`)
+      ?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
+  }, from === 'map' ? 0 : 60);
 }
-
-const smooth = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
 
 async function loadDetails(b, li) {
   const btn = li.querySelector('.js-details');
@@ -278,55 +326,171 @@ async function loadDetails(b, li) {
   btn.textContent = 'Loading…';
   try {
     const d = await provider.details(b.id);
-    const meta = li.querySelector('.card-meta');
-    const bits = [];
-    if (d.rating != null) {
-      bits.push(
-        `<span class="rating"><span class="star" aria-hidden="true">★</span> ${d.rating.toFixed(1)}` +
-          `<span class="muted"> (${d.ratingCount})</span></span>`,
-      );
-    } else {
-      bits.push('<span class="muted">No Google rating yet</span>');
-    }
-    if (d.phone) {
-      bits.push(`<span class="phone">${escapeHtml(d.phone)}</span>`);
-    } else {
-      bits.push('<span class="muted">No phone listed</span>');
-    }
-    meta.innerHTML = bits.join('');
-    meta.hidden = false;
+    const meta = li.querySelector('.row-meta');
+    meta.replaceChildren();
 
-    const actions = li.querySelector('.card-actions');
+    const rating = document.createElement('span');
+    if (d.rating != null) {
+      rating.className = 'meta-rating';
+      rating.innerHTML = `<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m10 1.8 2.5 5.3 5.8.7-4.3 4 1.1 5.7L10 14.7l-5.1 2.8L6 11.8l-4.3-4 5.8-.7z"/></svg>`;
+      rating.append(`${d.rating.toFixed(1)}`);
+      const c = document.createElement('span');
+      c.className = 'meta-muted';
+      c.textContent = ` from ${d.ratingCount} Google ${d.ratingCount === 1 ? 'review' : 'reviews'}`;
+      rating.append(c);
+    } else {
+      rating.className = 'meta-muted';
+      rating.textContent = 'No Google reviews yet';
+    }
+    const phone = document.createElement('span');
+    phone.className = d.phone ? 'meta-phone' : 'meta-muted';
+    phone.textContent = d.phone || 'No phone number listed';
+    meta.append(rating, phone);
+
+    const actions = li.querySelector('.row-actions');
     btn.remove();
     if (d.phone) {
       const wa = whatsappNumber(d.intlPhone);
+      const call = linkBtn('Call', 'btn btn-secondary', d.sample ? null : `tel:${(d.intlPhone || d.phone).replace(/[^\d+]/g, '')}`);
+      actions.prepend(call);
       if (wa || d.sample) {
-        const a = document.createElement('a');
-        a.className = 'btn btn-wa';
-        a.target = '_blank';
-        a.rel = 'noopener';
-        a.textContent = 'WhatsApp';
         const text = `Hi, I found you on Mumbai Broker Map. I'm looking for a home near ${current.place.name}.`;
-        a.href = d.sample ? '#' : `https://wa.me/${wa}?text=${encodeURIComponent(text)}`;
-        if (d.sample) a.addEventListener('click', (e) => e.preventDefault());
-        actions.prepend(a);
+        const waBtn = linkBtn('WhatsApp', 'btn btn-wa', d.sample ? null : `https://wa.me/${wa}?text=${encodeURIComponent(text)}`);
+        waBtn.insertAdjacentHTML(
+          'afterbegin',
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5zm5.3 13.3c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.1.1.7-.1 1.4z"/></svg>',
+        );
+        actions.prepend(waBtn);
       }
-      const call = document.createElement('a');
-      call.className = 'btn btn-soft';
-      call.textContent = 'Call';
-      call.href = d.sample ? '#' : `tel:${(d.intlPhone || d.phone).replace(/[^\d+]/g, '')}`;
-      if (d.sample) call.addEventListener('click', (e) => e.preventDefault());
-      actions.querySelector('.btn-wa') ? actions.querySelector('.btn-wa').after(call) : actions.prepend(call);
     }
   } catch (err) {
     console.error(err);
     btn.disabled = false;
-    btn.textContent = 'Couldn’t load. Try again';
+    btn.textContent = 'Didn’t load. Try again';
   }
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+function linkBtn(label, cls, href) {
+  const a = document.createElement('a');
+  a.className = cls;
+  a.textContent = label;
+  if (href) {
+    a.href = href;
+    if (href.startsWith('http')) {
+      a.target = '_blank';
+      a.rel = 'noopener';
+    }
+  } else {
+    a.href = '#';
+    a.title = 'Sample broker, no real number';
+    a.addEventListener('click', (e) => e.preventDefault());
+  }
+  return a;
 }
+
+// ---------- bottom sheet (phones) ----------
+
+let sheetState = 'peek';
+
+function sheetOffsets() {
+  const h = sheet.offsetHeight;
+  const peekVisible = Math.min(h, Math.max(250, innerHeight * 0.36));
+  return {
+    full: 0,
+    half: Math.max(0, h - innerHeight * 0.56),
+    peek: Math.max(0, h - peekVisible),
+  };
+}
+
+function snapSheet(state, animate = true) {
+  if (desktop.matches) return;
+  sheetState = state;
+  sheet.classList.toggle('is-animating', animate && !prefersReducedMotion());
+  sheet.style.setProperty('--sheet-y', `${sheetOffsets()[state]}px`);
+  sheet.dataset.state = state;
+}
+
+(function setupSheet() {
+  const grab = $('sheet-grab');
+  let startY = 0;
+  let startOffset = 0;
+  let lastY = 0;
+  let lastT = 0;
+  let velocity = 0;
+  let dragging = false;
+  let moved = false;
+
+  const begin = (e) => {
+    if (desktop.matches) return;
+    dragging = true;
+    moved = false;
+    startY = lastY = e.clientY;
+    lastT = performance.now();
+    startOffset = sheetOffsets()[sheetState];
+    sheet.classList.remove('is-animating');
+    grab.setPointerCapture(e.pointerId);
+  };
+  const move = (e) => {
+    if (!dragging) return;
+    const dy = e.clientY - startY;
+    if (Math.abs(dy) > 4) moved = true;
+    const now = performance.now();
+    velocity = (e.clientY - lastY) / Math.max(1, now - lastT);
+    lastY = e.clientY;
+    lastT = now;
+    const o = sheetOffsets();
+    const y = Math.min(o.peek + 40, Math.max(-20, startOffset + dy));
+    sheet.style.setProperty('--sheet-y', `${y}px`);
+  };
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    if (!moved) {
+      snapSheet(sheetState === 'peek' ? 'half' : sheetState === 'half' ? 'full' : 'half');
+      return;
+    }
+    const o = sheetOffsets();
+    const y = parseFloat(sheet.style.getPropertyValue('--sheet-y')) || 0;
+    const projected = y + velocity * 180;
+    const nearest = Object.entries(o).sort((a, b) => Math.abs(a[1] - projected) - Math.abs(b[1] - projected))[0][0];
+    snapSheet(nearest);
+  };
+  grab.addEventListener('pointerdown', begin);
+  grab.addEventListener('pointermove', move);
+  grab.addEventListener('pointerup', end);
+  grab.addEventListener('pointercancel', end);
+  grab.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp') snapSheet(sheetState === 'peek' ? 'half' : 'full');
+    if (e.key === 'ArrowDown') snapSheet(sheetState === 'full' ? 'half' : 'peek');
+  });
+
+  // Pulling down on the list when it's already at the top collapses the sheet.
+  let touchStartY = null;
+  sheetBody.addEventListener('touchstart', (e) => (touchStartY = sheetBody.scrollTop <= 0 ? e.touches[0].clientY : null), { passive: true });
+  sheetBody.addEventListener('touchmove', (e) => {
+    if (touchStartY == null) return;
+    if (e.touches[0].clientY - touchStartY > 60 && sheetState !== 'peek') {
+      snapSheet(sheetState === 'full' ? 'half' : 'peek');
+      touchStartY = null;
+    }
+  }, { passive: true });
+
+  sheet.addEventListener('transitionend', () => {
+    sheet.classList.remove('is-animating');
+    if (current && !desktop.matches) {
+      if (current.openId) provider?.highlight(current.openId, true, mapPadding());
+    }
+  });
+
+  addEventListener('resize', () => snapSheet(sheetState, false));
+  desktop.addEventListener('change', () => {
+    sheet.style.removeProperty('--sheet-y');
+    snapSheet(sheetState, false);
+  });
+  grab.tabIndex = 0;
+  grab.setAttribute('role', 'button');
+  grab.setAttribute('aria-label', 'Resize results panel');
+  snapSheet('peek', false);
+})();
 
 boot();

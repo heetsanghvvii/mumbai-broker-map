@@ -4,8 +4,9 @@ Search a building or society in Mumbai, drop a pin, and see the real estate agen
 
 - Building search with Google Places Autocomplete, limited to Mumbai
 - Shows the 1 km circle around the building, or widens to 2 km or 3 km when fewer than 5 brokers are inside
-- Each broker shows name, address and distance. Phone, rating, Call and WhatsApp load when you tap the card.
-- Numbered markers on the map match the numbered cards
+- Each broker shows name, address and distance. Tap a broker to see phone, rating, Call and WhatsApp.
+- Numbered markers match the numbered list, nearest first; tapping either one highlights both
+- Full-screen map with a draggable results sheet on phones and a floating panel on desktop
 - "Claim your profile" link for brokers, pointing to a Google Form
 - Works on phones first; follows light and dark mode
 - No backend. Plain JS and Vite. MIT licensed.

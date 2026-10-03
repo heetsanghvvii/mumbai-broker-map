@@ -36,3 +36,31 @@ export function whatsappNumber(intlPhone) {
   if (digits.length !== 12 || !digits.startsWith('91')) return null;
   return /^[6-9]/.test(digits.slice(2)) ? digits : null;
 }
+
+/**
+ * The map centre that puts `pos` in the middle of the visible area,
+ * when panels cover `pad` pixels of the map's edges (web-mercator approximation).
+ */
+export function offsetCenter(pos, zoom, pad) {
+  const mPerPx = (156543.03392 * Math.cos((pos.lat * Math.PI) / 180)) / 2 ** zoom;
+  const dLat = mPerPx / 111320;
+  const dLng = mPerPx / (111320 * Math.cos((pos.lat * Math.PI) / 180));
+  return {
+    lat: pos.lat - ((pad.bottom - pad.top) / 2) * dLat,
+    lng: pos.lng - ((pad.left - pad.right) / 2) * dLng,
+  };
+}
+
+export const prefersReducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Grow a circle's radius from 0 with an ease-out, unless the viewer prefers less motion. */
+export function growRadius(setRadius, to, ms = 700) {
+  if (prefersReducedMotion()) return setRadius(to);
+  const start = performance.now();
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / ms);
+    setRadius(to * (1 - (1 - t) ** 3));
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
