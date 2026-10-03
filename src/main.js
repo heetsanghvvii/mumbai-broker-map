@@ -70,8 +70,7 @@ function renderPopular() {
 async function runQuery(q) {
   input.value = q;
   syncClear();
-  await fetchSuggestions(q);
-  if (suggestions[0]) choose(0);
+  if (await fetchSuggestions(q)) choose(0);
 }
 
 // ---------- map padding: keep pins clear of the panel / sheet ----------
@@ -82,7 +81,9 @@ function mapPadding() {
     const r = sheet.getBoundingClientRect();
     return { top: 24, left: r.right + 24, right: 24, bottom: 24 };
   }
-  return { top, left: 20, right: 20, bottom: innerHeight - sheet.getBoundingClientRect().top + 16 };
+  // Use where the sheet is heading, not where it is mid-slide.
+  const visible = sheet.offsetHeight - sheetOffsets()[sheetState];
+  return { top, left: 20, right: 20, bottom: visible + 16 };
 }
 
 // ---------- autocomplete ----------
@@ -127,18 +128,21 @@ function syncClear() {
   clearBtn.hidden = !input.value;
 }
 
+/** Resolves true when fresh suggestions arrived and at least one matched. */
 async function fetchSuggestions(q) {
-  if (!provider) return;
+  if (!provider) return false;
   const seq = ++suggestSeq;
   try {
     const res = await provider.suggest(q);
-    if (seq !== suggestSeq) return;
+    if (seq !== suggestSeq) return false;
     suggestions = res;
     activeIndex = -1;
     renderList(q);
+    return res.length > 0;
   } catch (err) {
     console.error(err);
     if (seq === suggestSeq) showError('Suggestions didn’t load. Check your connection and type again.');
+    return false;
   }
 }
 
@@ -186,9 +190,12 @@ function closeList() {
 
 // ---------- search ----------
 
+let searchSeq = 0;
+
 async function choose(i) {
   const s = suggestions[i];
   if (!s) return;
+  const seq = ++searchSeq;
   closeList();
   input.value = s.main;
   syncClear();
@@ -205,12 +212,13 @@ async function choose(i) {
     const place = await provider.resolve(s);
     const center = { lat: place.lat, lng: place.lng };
     const raw = await provider.nearby(center, RADII_M[RADII_M.length - 1]);
+    if (seq !== searchSeq) return; // a newer search started while this one was loading
     const sorted = raw
       .map((b) => ({ ...b, distanceKm: distanceKm(center, b) }))
       .sort((a, b) => a.distanceKm - b.distanceKm);
     const { radiusM, items } = pickRadius(sorted, RADII_M, MIN_RESULTS);
 
-    current = { place, center, radiusM, brokers: items, openId: null };
+    current = { place, radiusM, brokers: items, openId: null };
     provider.showSearch(center, place.name, radiusM, mapPadding());
     provider.showBrokers(items, (id) => select(id, 'map'));
     renderResults();
@@ -221,6 +229,7 @@ async function choose(i) {
     history.replaceState(null, '', url);
   } catch (err) {
     console.error(err);
+    if (seq !== searchSeq) return;
     resultsEl.replaceChildren();
     showError('The search didn’t go through. Pick the building again to retry.');
   }
@@ -294,8 +303,10 @@ function row(b, i) {
   li.querySelector('.row-name').textContent = b.name;
   li.querySelector('.row-addr').textContent = b.address;
   li.querySelector('.btn-quiet').href = b.mapsUrl;
-  li.querySelector('.row-main').addEventListener('click', () => select(b.id, 'list'));
-  li.querySelector('.js-details').addEventListener('click', () => loadDetails(b, li));
+  li.querySelector('.row-main').addEventListener('click', () =>
+    select(current.openId === b.id ? null : b.id, 'list'),
+  );
+  li.querySelector('.js-details').addEventListener('click', () => loadDetails(b, li, current.place.name));
   return li;
 }
 
@@ -309,18 +320,17 @@ function select(id, from) {
     const more = el.querySelector('.row-more');
     if (more) more.hidden = !on;
   }
-  if (from === 'map' && !desktop.matches && sheetState === 'peek') snapSheet('half');
-  if (from === 'list' && !desktop.matches && sheetState === 'full') snapSheet('half');
-  // Let the sheet settle before measuring how much map is visible.
-  setTimeout(() => {
-    provider.highlight(id, true, mapPadding());
+  const target = from === 'map' ? sheetState === 'peek' && 'half' : sheetState === 'full' && 'half';
+  // If the sheet moves, the pan waits for it to settle (see transitionend) so the padding is right.
+  if (!(id && target && snapSheet(target))) provider.highlight(id, !!id, mapPadding());
+  if (id && from === 'map') {
     resultsEl
       .querySelector(`[data-id="${CSS.escape(id)}"]`)
       ?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
-  }, from === 'map' ? 0 : 60);
+  }
 }
 
-async function loadDetails(b, li) {
+async function loadDetails(b, li, placeName) {
   const btn = li.querySelector('.js-details');
   btn.disabled = true;
   btn.textContent = 'Loading…';
@@ -354,7 +364,7 @@ async function loadDetails(b, li) {
       const call = linkBtn('Call', 'btn btn-secondary', d.sample ? null : `tel:${(d.intlPhone || d.phone).replace(/[^\d+]/g, '')}`);
       actions.prepend(call);
       if (wa || d.sample) {
-        const text = `Hi, I found you on Mumbai Broker Map. I'm looking for a home near ${current.place.name}.`;
+        const text = `Hi, I found you on Mumbai Broker Map. I'm looking for a home near ${placeName}.`;
         const waBtn = linkBtn('WhatsApp', 'btn btn-wa', d.sample ? null : `https://wa.me/${wa}?text=${encodeURIComponent(text)}`);
         waBtn.insertAdjacentHTML(
           'afterbegin',
@@ -402,12 +412,16 @@ function sheetOffsets() {
   };
 }
 
+/** Returns true when the sheet will animate to a new position. */
 function snapSheet(state, animate = true) {
-  if (desktop.matches) return;
+  if (desktop.matches) return false;
+  const from = sheet.style.getPropertyValue('--sheet-y');
+  const to = `${sheetOffsets()[state]}px`;
   sheetState = state;
-  sheet.classList.toggle('is-animating', animate && !prefersReducedMotion());
-  sheet.style.setProperty('--sheet-y', `${sheetOffsets()[state]}px`);
-  sheet.dataset.state = state;
+  const moving = animate && from !== to && !prefersReducedMotion();
+  sheet.classList.toggle('is-animating', moving);
+  sheet.style.setProperty('--sheet-y', to);
+  return moving;
 }
 
 (function setupSheet() {
@@ -475,11 +489,10 @@ function snapSheet(state, animate = true) {
     }
   }, { passive: true });
 
-  sheet.addEventListener('transitionend', () => {
+  sheet.addEventListener('transitionend', (e) => {
+    if (e.target !== sheet || e.propertyName !== 'transform') return;
     sheet.classList.remove('is-animating');
-    if (current && !desktop.matches) {
-      if (current.openId) provider?.highlight(current.openId, true, mapPadding());
-    }
+    if (current?.openId) provider.highlight(current.openId, true, mapPadding());
   });
 
   addEventListener('resize', () => snapSheet(sheetState, false));

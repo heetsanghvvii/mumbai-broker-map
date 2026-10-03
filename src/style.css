@@ -29,7 +29,6 @@
   --t-xs: 0.8rem;
   --t-sm: 0.875rem;
   --t-md: 1rem;
-  --t-lg: 1.25rem;
   --t-xl: 1.5625rem;
   --t-2xl: 1.953rem;
 
@@ -38,7 +37,7 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
+  :root {
     --paper: #0b141b;
     --surface: #111c24;
     --ink: #e9eeec;
@@ -57,25 +56,6 @@
     --shadow-sheet: 0 -1px 0 rgb(255 255 255 / 0.04), 0 -14px 40px -16px rgb(0 0 0 / 0.8);
     color-scheme: dark;
   }
-}
-:root[data-theme='dark'] {
-  --paper: #0b141b;
-  --surface: #111c24;
-  --ink: #e9eeec;
-  --ink-2: #a7b4b9;
-  --ink-3: #6f7e86;
-  --hair: #1f2c35;
-  --marigold: #f4b23c;
-  --marigold-ink: #2b1b00;
-  --marigold-wash: #33260d;
-  --sea: #5fc1bb;
-  --sea-wash: #10302f;
-  --wa: #2bbd6e;
-  --danger: #ff8a80;
-  --scrim: rgb(11 20 27 / 0.8);
-  --shadow-float: 0 1px 2px rgb(0 0 0 / 0.5), 0 14px 34px -14px rgb(0 0 0 / 0.75);
-  --shadow-sheet: 0 -1px 0 rgb(255 255 255 / 0.04), 0 -14px 40px -16px rgb(0 0 0 / 0.8);
-  color-scheme: dark;
 }
 
 *,
@@ -172,9 +152,6 @@ button {
   color: var(--ink-2);
   transition: color 0.15s;
 }
-.claim:hover {
-  color: var(--ink);
-}
 .brand-mark {
   width: 20px;
   height: 20px;
@@ -229,9 +206,6 @@ button {
   border-radius: 50%;
   background: transparent;
 }
-.search-clear:hover {
-  background: var(--paper);
-}
 .search-clear svg {
   width: 18px;
   height: 18px;
@@ -267,7 +241,6 @@ button {
   border-radius: 10px;
   cursor: pointer;
 }
-.sugg:hover,
 .sugg[aria-selected='true'] {
   background: var(--paper);
 }
@@ -431,10 +404,6 @@ button {
   color: var(--ink);
   transition: background-color 0.15s, box-shadow 0.15s;
 }
-.chip:hover {
-  background: var(--marigold-wash);
-  box-shadow: inset 0 0 0 1px var(--marigold);
-}
 
 /* ---------- summary ---------- */
 .summary {
@@ -550,11 +519,6 @@ button {
   color: var(--ink-2);
   white-space: nowrap;
 }
-.row-main:hover .row-name {
-  text-decoration: underline;
-  text-decoration-color: var(--hair);
-  text-underline-offset: 3px;
-}
 .row.is-open .row-num {
   background: var(--marigold);
   color: var(--marigold-ink);
@@ -637,32 +601,18 @@ button {
   background: var(--ink);
   color: var(--paper);
 }
-.btn-primary:hover {
-  background: color-mix(in srgb, var(--ink) 86%, var(--paper));
-}
 .btn-secondary {
   background: var(--sea-wash);
   color: var(--sea);
-}
-.btn-secondary:hover {
-  background: color-mix(in srgb, var(--sea-wash) 82%, var(--sea));
 }
 .btn-wa {
   background: var(--wa);
   color: #fff;
 }
-.btn-wa:hover {
-  background: color-mix(in srgb, var(--wa) 88%, #000);
-}
 .btn-quiet {
   padding: 0 6px;
   color: var(--ink-2);
   background: none;
-}
-.btn-quiet:hover {
-  color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 /* ---------- skeleton ---------- */
@@ -743,9 +693,6 @@ button {
   translate: 0 50%;
   transition: transform 0.22s var(--ease), background-color 0.2s, color 0.2s;
   animation: marker-in 0.32s var(--ease) both;
-}
-.mk-broker:hover {
-  transform: scale(1.1);
 }
 .mk-broker.is-active {
   background: var(--marigold);
@@ -829,12 +776,9 @@ button {
   filter: saturate(0.25) contrast(0.92) brightness(1.03);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .preview-tiles {
+  .preview-tiles {
     filter: invert(1) hue-rotate(180deg) saturate(0.25) brightness(0.8) contrast(0.95);
   }
-}
-:root[data-theme='dark'] .preview-tiles {
-  filter: invert(1) hue-rotate(180deg) saturate(0.25) brightness(0.8) contrast(0.95);
 }
 .leaflet-container {
   font-family: var(--font);
@@ -847,6 +791,45 @@ button {
 }
 .leaflet-control-attribution a {
   color: var(--ink-2);
+}
+
+/* ---------- hover (mouse and trackpad only) ---------- */
+@media (hover: hover) {
+  .sugg:hover {
+    background: var(--paper);
+  }
+  .claim:hover {
+    color: var(--ink);
+  }
+  .search-clear:hover {
+    background: var(--paper);
+  }
+  .chip:hover {
+    background: var(--marigold-wash);
+    box-shadow: inset 0 0 0 1px var(--marigold);
+  }
+  .row-main:hover .row-name {
+    text-decoration: underline;
+    text-decoration-color: var(--hair);
+    text-underline-offset: 3px;
+  }
+  .btn-primary:hover {
+    background: color-mix(in srgb, var(--ink) 86%, var(--paper));
+  }
+  .btn-secondary:hover {
+    background: color-mix(in srgb, var(--sea-wash) 82%, var(--sea));
+  }
+  .btn-wa:hover {
+    background: color-mix(in srgb, var(--wa) 88%, #000);
+  }
+  .btn-quiet:hover {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .mk-broker:hover:not(.is-active) {
+    transform: scale(1.1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

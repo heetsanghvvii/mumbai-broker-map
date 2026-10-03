@@ -55,8 +55,6 @@ export async function createGoogleProvider(el) {
   let markers = [];
 
   return {
-    kind: 'google',
-
     async suggest(input) {
       const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
         input,
@@ -72,7 +70,6 @@ export async function createGoogleProvider(el) {
         .map((s) => {
           const p = s.placePrediction;
           return {
-            id: p.placeId,
             main: p.mainText?.toString() || p.text.toString(),
             secondary: p.secondaryText?.toString() || '',
             _pred: p,
@@ -146,31 +143,22 @@ export async function createGoogleProvider(el) {
       growRadius((r) => circle.setRadius(r), radiusM);
     },
 
-    refit(pad) {
-      if (circle) map.fitBounds(circle.getBounds(), pad);
-    },
-
     showBrokers(list, onSelect) {
-      markers.forEach((m) => (m.map = null));
+      markers.forEach(({ m }) => (m.map = null));
       markers = list.map((b, i) => {
-        const content = brokerMarkerEl(i + 1);
-        const m = new AdvancedMarkerElement({ map, position: { lat: b.lat, lng: b.lng }, content, title: b.name, gmpClickable: true });
-        m.addListener('click', () => onSelect(b.id, 'map'));
-        m._id = b.id;
-        return m;
+        const position = { lat: b.lat, lng: b.lng };
+        const m = new AdvancedMarkerElement({ map, position, content: brokerMarkerEl(i + 1), title: b.name, gmpClickable: true });
+        m.addEventListener('gmp-click', () => onSelect(b.id));
+        return { m, id: b.id, position };
       });
     },
 
     highlight(id, pan, pad) {
-      for (const m of markers) {
-        const on = m._id === id;
+      for (const { m, id: mid, position } of markers) {
+        const on = mid === id;
         m.content.classList.toggle('is-active', on);
         m.zIndex = on ? 999 : null;
-        if (on && pan) {
-          const p = m.position;
-          const pos = { lat: typeof p.lat === 'function' ? p.lat() : p.lat, lng: typeof p.lng === 'function' ? p.lng() : p.lng };
-          map.panTo(offsetCenter(pos, map.getZoom(), pad));
-        }
+        if (on && pan) map.panTo(offsetCenter(position, map.getZoom(), pad));
       }
     },
   };

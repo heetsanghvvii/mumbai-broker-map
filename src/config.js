@@ -11,4 +11,4 @@ export const MUMBAI_CENTER = { lat: 19.076, lng: 72.8777 };
 export const MIN_RESULTS = 5;
 export const RADII_M = [1000, 2000, 3000];
 
-export const TRY_QUERIES = ['Hiranandani Gardens', 'Lodha Park', 'Oberoi Splendor', 'Kalpataru Aura'];
+export const TRY_QUERIES = ['Hiranandani Gardens', 'Lodha The Park', 'Oberoi Splendor', 'Kalpataru Aura'];

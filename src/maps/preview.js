@@ -70,12 +70,12 @@ export async function createPreviewProvider(el) {
     L.divIcon({ html: node, className: 'mk-leaflet', iconSize: null, iconAnchor: anchor });
 
   return {
-    kind: 'preview',
-
     async suggest(input) {
-      const q = input.toLowerCase();
-      return BUILDINGS.filter((b) => (b.name + ' ' + b.area).toLowerCase().includes(q)).map((b) => ({
-        id: b.name,
+      const words = input.toLowerCase().split(/\s+/).filter(Boolean);
+      return BUILDINGS.filter((b) => {
+        const hay = `${b.name} ${b.area}`.toLowerCase();
+        return words.every((w) => hay.includes(w));
+      }).map((b) => ({
         main: b.name,
         secondary: `${b.area}, Mumbai`,
         _b: b,
@@ -96,7 +96,7 @@ export async function createPreviewProvider(el) {
       await new Promise((r) => setTimeout(r, 300));
       const b = lastBrokers.find((x) => x.id === id);
       return {
-        phone: b?._mobile ? '00000 00000' : null,
+        phone: b?._mobile ? 'Sample number' : null,
         intlPhone: null,
         rating: b?._rating ?? null,
         ratingCount: b?._count ?? 0,
@@ -116,18 +116,12 @@ export async function createPreviewProvider(el) {
         fillOpacity: 0.08,
         interactive: false,
       }).addTo(map);
-      this.refit(pad);
-      growRadius((r) => circle.setRadius(r), radiusM);
-    },
-
-    refit(pad) {
-      if (!circle) return;
-      const b = L.latLng(circle.getLatLng()).toBounds(circle.getRadius() * 2);
-      map.flyToBounds(b, {
+      map.flyToBounds(circle.getBounds(), {
         paddingTopLeft: [pad.left, pad.top],
         paddingBottomRight: [pad.right, pad.bottom],
         duration: prefersReducedMotion() ? 0 : 0.8,
       });
+      growRadius((r) => circle.setRadius(r), radiusM);
     },
 
     showBrokers(list, onSelect) {
@@ -135,7 +129,7 @@ export async function createPreviewProvider(el) {
       markers = list.map((b, i) => {
         const node = brokerMarkerEl(i + 1);
         const m = L.marker([b.lat, b.lng], { icon: icon(node, [0, 0]), title: b.name }).addTo(map);
-        m.on('click', () => onSelect(b.id, 'map'));
+        m.on('click', () => onSelect(b.id));
         m._id = b.id;
         m._node = node;
         return m;
