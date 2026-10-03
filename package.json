@@ -1,0 +1,20 @@
+{
+  "name": "mumbai-broker-map",
+  "version": "0.1.0",
+  "description": "Search a Mumbai building, see real estate brokers nearby.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "author": "Heet Sanghvi",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "vite": "^8.3.2"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4"
+  },
+  "private": true
+}

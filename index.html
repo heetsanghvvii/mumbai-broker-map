@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Mumbai Broker Map</title>
+    <meta name="description" content="Search any building in Mumbai and see the real estate brokers within 1 km." />
+    <meta name="theme-color" content="#f4f5f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1318" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
+    />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Mumbai Broker Map home">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M16 2c-6.1 0-11 4.8-11 10.8C5 20.9 16 30 16 30s11-9.1 11-17.2C27 6.8 22.1 2 16 2z" fill="currentColor" />
+            <circle cx="16" cy="12.6" r="4.2" fill="var(--accent)" />
+          </svg>
+          <span>Mumbai <b>Broker Map</b></span>
+        </a>
+        <a id="claim-link" class="btn btn-ghost" href="#" target="_blank" rel="noopener">
+          <span class="claim-long">Are you a broker? Claim your profile</span><span class="claim-short">Brokers: claim profile</span>
+        </a>
+      </header>
+
+      <main class="layout">
+        <section class="panel" aria-label="Search and results">
+          <div class="search-block">
+            <h1 class="headline">Which building are you buying in?</h1>
+            <div class="search" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-owns="suggestions">
+              <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <input
+                id="search-input"
+                type="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="Search a building or society, e.g. Lodha Park"
+                aria-label="Search a building in Mumbai"
+                aria-autocomplete="list"
+                aria-controls="suggestions"
+              />
+              <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+            </div>
+            <div id="try-row" class="try-row">
+              <span class="try-label">Try</span>
+            </div>
+          </div>
+
+          <div id="status" class="status" aria-live="polite"></div>
+          <ol id="results" class="results"></ol>
+
+          <div id="empty" class="empty">
+            <p class="empty-title">Brokers know their buildings.</p>
+            <p>Search the building or society you're looking at. We'll pin it and list the real estate agencies closest to it, nearest first.</p>
+          </div>
+
+          <footer class="footer">
+            <p>
+              Listings come from Google Maps and are not verified by us. Before you pay any token or brokerage, check the
+              agent's registration on <a href="https://maharera.maharashtra.gov.in" target="_blank" rel="noopener">MahaRERA</a>.
+            </p>
+            <p class="footer-meta">Open source · MIT · <a href="https://github.com/heetsanghvvii/mumbai-broker-map" target="_blank" rel="noopener">GitHub</a></p>
+          </footer>
+        </section>
+
+        <section class="map-wrap" aria-label="Map">
+          <div id="map" class="map"></div>
+          <div id="map-note" class="map-note" hidden></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
