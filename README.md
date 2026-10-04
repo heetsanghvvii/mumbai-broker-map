@@ -1,10 +1,14 @@
 # Mumbai Broker Map
 
-> A free, open-source map that helps Mumbai home buyers find a real estate broker near the building they care about. **Live: [mumbai-broker-map.vercel.app](https://mumbai-broker-map.vercel.app)**
+> A free, open-source map that helps Mumbai home buyers find a real estate broker near the building they care about. **Live: [mumbai-broker-map.vercel.app](https://mumbai-broker-map.vercel.app)** · **[Read the PRD](docs/PRD.md)**
+>
+> Product by [Heet Sanghvi](https://github.com/heetsanghvvii), Product Manager. I scoped, priced and shipped it.
 
 ![Mumbai Broker Map: 38 brokers within 1 km of Hiranandani Gardens, nearest first](docs/screenshot.jpg)
 
 ## The product thinking
+
+Short version below. Personas, out-of-scope list, guardrails, metrics and roadmap are in the [PRD](docs/PRD.md).
 
 | | |
 |---|---|
