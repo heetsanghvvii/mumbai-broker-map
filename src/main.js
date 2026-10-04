@@ -4,7 +4,7 @@ import { distanceKm, formatDistance, pickRadius, prefersReducedMotion } from './
 import { brokersInArea, brokersNear, directoryReady, listAreas, takeBudget } from './data.js';
 import { createPhotonSearch } from './maps/photon.js';
 import { FIT_COLORS } from './maps/markers.js';
-import { buyUnlock, fetchCommute, officeKeyOf, savedUnlock } from './pay.js';
+import { buyUnlock, buyWithUpi, checkPendingUpi, fetchCommute, officeKeyOf, savedUnlock } from './pay.js';
 
 const $ = (id) => document.getElementById(id);
 const input = $('search-input');
@@ -32,6 +32,7 @@ async function boot() {
   renderPopular();
   renderModes();
   loadAreas();
+  checkPendingUpi().catch(() => {}); // UPI payments approved since the last visit unlock now
   map = await createMap();
   const q = new URLSearchParams(location.search).get('q');
   const area = new URLSearchParams(location.search).get('area');
@@ -730,7 +731,9 @@ document.addEventListener('click', async (e) => {
   btn.disabled = true;
   btn.textContent = 'Opening payment…';
   try {
-    const v = await buyUnlock(commute.office);
+    const status = await checkCommuteReady();
+    if (!status.payments) throw Object.assign(new Error('Payments open soon.'), { code: 'payments_not_configured' });
+    const v = status.payments === 'upi' ? await buyWithUpi(commute.office) : await buyUnlock(commute.office);
     if (v) {
       commute.unlock = v;
       setTab('commute');

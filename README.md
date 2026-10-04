@@ -33,7 +33,9 @@ Without a Google key the site still works: it uses OpenStreetMap for the map and
 | `GOOGLE_ROUTES_KEY` | server | Routes API key for Commute Search. Never sent to the browser. |
 | `COMMUTE_DB_SECRET` | server | Random secret; its SHA-256 goes in `supabase/schema.sql` |
 | `UNLOCK_SECRET` | server | Random secret that signs unlock tokens |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | server | Razorpay API keys (test keys first) |
+| `UPI_ID`, `UPI_NAME` | server | Your UPI ID and payee name, for manual UPI payments |
+| `ADMIN_PASSWORD` | server | Password for `/admin.html`, where you approve UPI payments |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | server | Razorpay API keys (test keys first); when set, they replace UPI |
 | `RAZORPAY_WEBHOOK_SECRET` | server | Secret you set on the Razorpay webhook |
 | `COMMUTE_CACHE_HOURS` | server | How long commute results are reused. Default 168 (7 days). |
 | `COMMUTE_PRICE_PAISE` | server | Unlock price in paise. Default 14900 (₹149). |
@@ -91,7 +93,12 @@ Add a **budget alert** under Billing → Budgets & alerts so you're emailed if a
 
 Each commute search sends at most 25 localities × 2 times (morning, evening) × the selected modes. The element count is logged on every search (`"event":"commute"`).
 
-## Payments (Razorpay)
+## Payments
+
+### UPI to start (no payment gateway)
+Set `UPI_ID` (and optionally `UPI_NAME`) and a long random `ADMIN_PASSWORD`. Buyers scan a UPI QR for the unlock price, add a short reference code to the payment note, and enter the 12-digit UPI transaction ID (UTR). You check it in your UPI app and approve it on `/admin.html`; the buyer's page unlocks automatically. A transaction ID can back only one unlock.
+
+### Razorpay (later)
 
 1. Create a Razorpay account, and use **Test mode** first.
 2. Put the test key ID and secret in Vercel as `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`.
@@ -133,6 +140,9 @@ api/commute.js          Commute Search
 api/pay/order.js        start an unlock order
 api/pay/verify.js       confirm payment, issue unlock token
 api/razorpay-webhook.js record paid orders
+api/pay/upi.js          UPI payment: start, claim, status
+api/admin.js            approve or reject UPI payments
+public/admin.html       the payments desk
 api/_lib/               shared server code
 data/localities.json    56 Mumbai localities with centres
 supabase/schema.sql     tables, access rules, server function

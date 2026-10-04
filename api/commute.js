@@ -14,7 +14,8 @@ const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 export async function GET() {
   return json({
     ready: !!env('GOOGLE_ROUTES_KEY'),
-    payments: !!(env('RAZORPAY_KEY_ID') && env('RAZORPAY_KEY_SECRET')),
+    // Razorpay when its keys are set; otherwise UPI to the owner's UPI ID, approved by hand.
+    payments: env('RAZORPAY_KEY_ID') && env('RAZORPAY_KEY_SECRET') ? 'razorpay' : env('UPI_ID') ? 'upi' : false,
     price: PRICE_PAISE() / 100,
   });
 }

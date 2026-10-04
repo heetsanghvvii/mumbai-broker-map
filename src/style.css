@@ -1091,6 +1091,112 @@ input[type='range'] {
   background: var(--ink);
 }
 
+/* ---------- UPI payment sheet ---------- */
+.upi {
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 22px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
+}
+.upi::backdrop {
+  background: rgb(14 26 36 / 0.45);
+}
+.upi-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.upi-close button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 22px;
+  line-height: 1;
+}
+.upi-title {
+  margin: 0 40px 4px 0;
+  font-size: var(--t-xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.upi-amount {
+  margin: 0 0 16px;
+  font-weight: 600;
+  color: var(--green-deep);
+}
+.upi-pay {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+@media (max-width: 480px) {
+  .upi-pay {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}
+.upi-qr {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--hair);
+  background: #fff;
+}
+.upi-steps p {
+  margin: 0 0 10px;
+  font-size: var(--t-sm);
+}
+.upi-id-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.upi code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--paper);
+  font-weight: 700;
+  word-break: break-all;
+}
+.upi-claim {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: var(--t-sm);
+}
+.upi-claim input {
+  height: 46px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--hair);
+  font: inherit;
+  font-size: var(--t-md);
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+.upi-msg {
+  margin: 0;
+  min-height: 1em;
+  color: var(--green-deep);
+}
+.upi-msg.is-error {
+  color: var(--danger);
+}
+.upi .fine {
+  margin: 12px 0 0;
+}
+
 /* ---------- hover (mouse and trackpad only) ---------- */
 @media (hover: hover) {
   .sugg:hover {

@@ -41,7 +41,7 @@ Never commit them. They live in Vercel project env vars (production + preview): 
 `public.brokers` holds 1,515 brokers (1,504 with locations) from a Clay export of Google Maps listings, with area by PIN code. Heet accepted that storing this Google data breaks Google's terms (risk: key suspension). Places results fetched live in the browser are never stored.
 
 ## Open items
-1. Razorpay: needs Heet's account and test keys → set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, webhook URL `/api/razorpay-webhook` (events `order.paid`, `payment.captured`). Until then the unlock button says payments open soon.
+1. Payments run on manual UPI (`UPI_ID` + `ADMIN_PASSWORD`, approve at `/admin.html`) until Razorpay. Razorpay later: needs Heet's account and test keys → set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, webhook URL `/api/razorpay-webhook` (events `order.paid`, `payment.captured`). Until then the unlock button says payments open soon.
 2. Vercel Hobby is non-commercial; move to Pro before taking payments.
 3. Budget alert in Google Cloud Billing (Heet).
 4. One more area's broker list is coming from Heet; import it the same way (place_id, area by PIN, name, address, phone, whatsapp, rating, reviews, lat/lng from Places `location`).

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Payments · Mumbai Broker Map</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<style>
+  :root { --paper: #f5f6f3; --surface: #fff; --ink: #0e1a24; --ink-2: #4b5a66; --ink-3: #84909a; --hair: #e4e8e4; --green: #2f9e62; --green-wash: #e6f3eb; --amber: #b57a00; --amber-wash: #fdf3dc; --red: #b3261e; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --paper: #0b141b; --surface: #111c24; --ink: #e9eeec; --ink-2: #a7b4b9; --ink-3: #6f7e86; --hair: #1f2c35; --green: #4cc283; --green-wash: #12301f; --amber: #f4b23c; --amber-wash: #33260d; --red: #ff8a80; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px 16px 40px; background: var(--paper); color: var(--ink); font: 400 15px/1.45 'Helvetica Neue', 'Segoe UI', system-ui, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 14px; }
+  h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+  .sub { margin: 0; color: var(--ink-2); font-size: 14px; }
+  form { display: flex; gap: 8px; }
+  input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border: 1px solid var(--hair); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
+  button { height: 40px; padding: 0 16px; border: 0; border-radius: 999px; font: 600 14px/1 inherit; cursor: pointer; }
+  .primary { background: var(--ink); color: var(--paper); }
+  .ok { background: var(--green); color: #fff; }
+  .no { background: transparent; color: var(--red); box-shadow: inset 0 0 0 1px var(--hair); }
+  .card { display: grid; gap: 8px; padding: 14px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--hair); }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .amt { font-size: 20px; font-weight: 800; }
+  .pill { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .claimed { background: var(--amber-wash); color: var(--amber); }
+  .paid { background: var(--green-wash); color: var(--green); }
+  .rejected { background: transparent; color: var(--red); box-shadow: inset 0 0 0 1px var(--hair); }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; font-size: 14px; }
+  dt { color: var(--ink-3); }
+  dd { margin: 0; font-weight: 600; word-break: break-all; font-variant-numeric: tabular-nums; }
+  .actions { display: flex; gap: 8px; }
+  .msg { min-height: 1em; margin: 0; color: var(--red); font-size: 14px; }
+  .empty { color: var(--ink-3); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Payments</h1>
+  <p class="sub">Open your UPI app, find a payment with the same amount and transaction ID (and the reference code in the note), then approve it. Approved buyers unlock automatically.</p>
+  <form id="login">
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Admin password" required />
+    <button class="primary" type="submit">Show payments</button>
+  </form>
+  <p class="msg" id="msg"></p>
+  <div id="list"></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let pw = '';
+try { pw = sessionStorage.getItem('mbm-admin') || ''; } catch {}
+
+async function call(body) {
+  const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw, ...body }) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'Something went wrong.');
+  return data;
+}
+
+const when = (s) => (s ? new Date(s).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '');
+
+async function load() {
+  $('msg').textContent = '';
+  try {
+    const { payments } = await call({ action: 'list' });
+    try { sessionStorage.setItem('mbm-admin', pw); } catch {}
+    $('login').hidden = true;
+    const list = $('list');
+    list.replaceChildren();
+    if (!payments.length) {
+      list.innerHTML = '<p class="empty">No payments in the last 30 days.</p>';
+      return;
+    }
+    // Waiting for a check first, then the rest, newest first.
+    payments.sort((a, b) => (a.status === 'claimed') === (b.status === 'claimed') ? 0 : a.status === 'claimed' ? -1 : 1);
+    for (const p of payments) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const label = { claimed: 'Waiting for check', paid: 'Approved', rejected: 'Rejected', created: 'Started' }[p.status] || p.status;
+      card.innerHTML = `<div class="head"><span class="amt"></span><span class="pill"></span></div><dl></dl>`;
+      card.querySelector('.amt').textContent = `₹${p.amount / 100}`;
+      const pill = card.querySelector('.pill');
+      pill.textContent = label;
+      pill.classList.add(p.status);
+      const dl = card.querySelector('dl');
+      for (const [k, v] of [['UPI txn ID', p.utr || '—'], ['Note code', p.ref || '—'], ['Method', p.method], ['Sent', when(p.claimed_at || p.created_at)], ['Office cell', p.office_key]]) {
+        const dt = document.createElement('dt'); dt.textContent = k;
+        const dd = document.createElement('dd'); dd.textContent = v;
+        dl.append(dt, dd);
+      }
+      if (p.status === 'claimed') {
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        const ok = Object.assign(document.createElement('button'), { className: 'ok', textContent: 'Approve' });
+        const no = Object.assign(document.createElement('button'), { className: 'no', textContent: 'Reject' });
+        ok.onclick = () => decide('approve', p.order_id, ok);
+        no.onclick = () => decide('reject', p.order_id, no);
+        actions.append(ok, no);
+        card.append(actions);
+      }
+      list.append(card);
+    }
+  } catch (err) {
+    $('login').hidden = false;
+    $('msg').textContent = err.message;
+  }
+}
+
+async function decide(action, orderId, btn) {
+  btn.disabled = true;
+  try {
+    await call({ action, orderId });
+    load();
+  } catch (err) {
+    btn.disabled = false;
+    $('msg').textContent = err.message;
+  }
+}
+
+$('login').addEventListener('submit', (e) => { e.preventDefault(); pw = $('pw').value; load(); });
+if (pw) load();
+</script>
+</body>
+</html>
