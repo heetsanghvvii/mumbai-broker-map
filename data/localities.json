@@ -1,0 +1,338 @@
+[
+ {
+  "name": "Colaba",
+  "region": "South Mumbai",
+  "lat": 18.9067,
+  "lng": 72.8147
+ },
+ {
+  "name": "Nariman Point",
+  "region": "South Mumbai",
+  "lat": 18.9256,
+  "lng": 72.8242
+ },
+ {
+  "name": "Churchgate",
+  "region": "South Mumbai",
+  "lat": 18.9322,
+  "lng": 72.8264
+ },
+ {
+  "name": "Fort",
+  "region": "South Mumbai",
+  "lat": 18.9345,
+  "lng": 72.8355
+ },
+ {
+  "name": "Kalbadevi",
+  "region": "South Mumbai",
+  "lat": 18.9478,
+  "lng": 72.8296
+ },
+ {
+  "name": "Masjid Bunder",
+  "region": "South Mumbai",
+  "lat": 18.9515,
+  "lng": 72.8375
+ },
+ {
+  "name": "Girgaon",
+  "region": "South Mumbai",
+  "lat": 18.9547,
+  "lng": 72.8169
+ },
+ {
+  "name": "Malabar Hill",
+  "region": "South Mumbai",
+  "lat": 18.9548,
+  "lng": 72.7985
+ },
+ {
+  "name": "Grant Road",
+  "region": "South Mumbai",
+  "lat": 18.9635,
+  "lng": 72.816
+ },
+ {
+  "name": "Breach Candy",
+  "region": "South Mumbai",
+  "lat": 18.9687,
+  "lng": 72.805
+ },
+ {
+  "name": "Tardeo",
+  "region": "South Mumbai",
+  "lat": 18.9719,
+  "lng": 72.8136
+ },
+ {
+  "name": "Mumbai Central",
+  "region": "South Mumbai",
+  "lat": 18.9712,
+  "lng": 72.8194
+ },
+ {
+  "name": "Byculla",
+  "region": "South Mumbai",
+  "lat": 18.979,
+  "lng": 72.8335
+ },
+ {
+  "name": "Mazgaon",
+  "region": "South Mumbai",
+  "lat": 18.9659,
+  "lng": 72.8442
+ },
+ {
+  "name": "Jacob Circle",
+  "region": "South Mumbai",
+  "lat": 18.9824,
+  "lng": 72.8256
+ },
+ {
+  "name": "Cotton Green",
+  "region": "South Mumbai",
+  "lat": 18.9866,
+  "lng": 72.8435
+ },
+ {
+  "name": "Parel",
+  "region": "Central Mumbai",
+  "lat": 19.0,
+  "lng": 72.841
+ },
+ {
+  "name": "Lower Parel",
+  "region": "Central Mumbai",
+  "lat": 18.9979,
+  "lng": 72.8263
+ },
+ {
+  "name": "Worli",
+  "region": "Central Mumbai",
+  "lat": 19.0119,
+  "lng": 72.818
+ },
+ {
+  "name": "Sewri",
+  "region": "Central Mumbai",
+  "lat": 19.0012,
+  "lng": 72.855
+ },
+ {
+  "name": "Prabhadevi",
+  "region": "Central Mumbai",
+  "lat": 19.0166,
+  "lng": 72.8295
+ },
+ {
+  "name": "Dadar",
+  "region": "Central Mumbai",
+  "lat": 19.0186,
+  "lng": 72.8423
+ },
+ {
+  "name": "Wadala",
+  "region": "Central Mumbai",
+  "lat": 19.016,
+  "lng": 72.859
+ },
+ {
+  "name": "Matunga",
+  "region": "Central Mumbai",
+  "lat": 19.027,
+  "lng": 72.8505
+ },
+ {
+  "name": "Mahim",
+  "region": "Central Mumbai",
+  "lat": 19.0399,
+  "lng": 72.8406
+ },
+ {
+  "name": "Dharavi",
+  "region": "Central Mumbai",
+  "lat": 19.043,
+  "lng": 72.855
+ },
+ {
+  "name": "Sion",
+  "region": "Central Mumbai",
+  "lat": 19.0434,
+  "lng": 72.8616
+ },
+ {
+  "name": "Bandra",
+  "region": "Western Suburbs",
+  "lat": 19.0596,
+  "lng": 72.8295
+ },
+ {
+  "name": "Khar",
+  "region": "Western Suburbs",
+  "lat": 19.0712,
+  "lng": 72.8366
+ },
+ {
+  "name": "Santacruz",
+  "region": "Western Suburbs",
+  "lat": 19.0822,
+  "lng": 72.8417
+ },
+ {
+  "name": "Vile Parle",
+  "region": "Western Suburbs",
+  "lat": 19.099,
+  "lng": 72.8446
+ },
+ {
+  "name": "Juhu",
+  "region": "Western Suburbs",
+  "lat": 19.1075,
+  "lng": 72.8263
+ },
+ {
+  "name": "Andheri",
+  "region": "Western Suburbs",
+  "lat": 19.1197,
+  "lng": 72.8464
+ },
+ {
+  "name": "Jogeshwari",
+  "region": "Western Suburbs",
+  "lat": 19.1356,
+  "lng": 72.849
+ },
+ {
+  "name": "Goregaon",
+  "region": "Western Suburbs",
+  "lat": 19.1647,
+  "lng": 72.8494
+ },
+ {
+  "name": "Malad",
+  "region": "Western Suburbs",
+  "lat": 19.1874,
+  "lng": 72.8484
+ },
+ {
+  "name": "Kandivali",
+  "region": "Western Suburbs",
+  "lat": 19.2045,
+  "lng": 72.8517
+ },
+ {
+  "name": "Borivali",
+  "region": "Western Suburbs",
+  "lat": 19.2307,
+  "lng": 72.8567
+ },
+ {
+  "name": "Dahisar",
+  "region": "Western Suburbs",
+  "lat": 19.2502,
+  "lng": 72.8597
+ },
+ {
+  "name": "Mira Road",
+  "region": "Mira-Bhayandar",
+  "lat": 19.2813,
+  "lng": 72.8686
+ },
+ {
+  "name": "Bhayandar",
+  "region": "Mira-Bhayandar",
+  "lat": 19.301,
+  "lng": 72.851
+ },
+ {
+  "name": "Kurla",
+  "region": "Central Suburbs",
+  "lat": 19.0652,
+  "lng": 72.8796
+ },
+ {
+  "name": "Sakinaka",
+  "region": "Central Suburbs",
+  "lat": 19.103,
+  "lng": 72.888
+ },
+ {
+  "name": "Powai",
+  "region": "Central Suburbs",
+  "lat": 19.1176,
+  "lng": 72.906
+ },
+ {
+  "name": "Ghatkopar",
+  "region": "Central Suburbs",
+  "lat": 19.086,
+  "lng": 72.9081
+ },
+ {
+  "name": "Vikhroli",
+  "region": "Central Suburbs",
+  "lat": 19.111,
+  "lng": 72.9278
+ },
+ {
+  "name": "Bhandup",
+  "region": "Central Suburbs",
+  "lat": 19.144,
+  "lng": 72.935
+ },
+ {
+  "name": "Mulund",
+  "region": "Central Suburbs",
+  "lat": 19.1726,
+  "lng": 72.9564
+ },
+ {
+  "name": "Chembur",
+  "region": "Harbour",
+  "lat": 19.0522,
+  "lng": 72.9005
+ },
+ {
+  "name": "Govandi",
+  "region": "Harbour",
+  "lat": 19.0553,
+  "lng": 72.9155
+ },
+ {
+  "name": "Mankhurd",
+  "region": "Harbour",
+  "lat": 19.048,
+  "lng": 72.932
+ },
+ {
+  "name": "Thane",
+  "region": "Thane",
+  "lat": 19.1972,
+  "lng": 72.9722
+ },
+ {
+  "name": "Airoli",
+  "region": "Navi Mumbai",
+  "lat": 19.159,
+  "lng": 72.9986
+ },
+ {
+  "name": "Vashi",
+  "region": "Navi Mumbai",
+  "lat": 19.0771,
+  "lng": 72.9986
+ },
+ {
+  "name": "CBD Belapur",
+  "region": "Navi Mumbai",
+  "lat": 19.0186,
+  "lng": 73.039
+ },
+ {
+  "name": "Kharghar",
+  "region": "Navi Mumbai",
+  "lat": 19.0473,
+  "lng": 73.0699
+ }
+]

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Mumbai Broker Map</title>
-    <meta name="description" content="Search any building in Mumbai and see the real estate brokers within 1 km." />
+    <meta name="description" content="Search any building in Mumbai and see the real estate brokers around it, or find the areas that fit your commute." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://mumbai-broker-map.vercel.app/" />
     <meta property="og:title" content="Mumbai Broker Map" />
@@ -27,6 +27,14 @@
     <a class="skip" href="#sheet-body">Skip to results</a>
     <div id="map" class="map" aria-label="Map of Mumbai"></div>
 
+    <div id="map-lock" class="map-lock" hidden>
+      <div class="map-lock-card">
+        <p class="map-lock-title">See every area on the map</p>
+        <p class="map-lock-text">Colour-coded commute map, morning and evening times, every travel mode, and brokers in each area.</p>
+        <button type="button" class="btn btn-primary js-unlock">Unlock full commute map for ₹99</button>
+      </div>
+    </div>
+
     <header class="top">
       <div class="top-row">
         <a class="brand" href="/" aria-label="Mumbai Broker Map, start over">
@@ -36,7 +44,11 @@
           </svg>
           Mumbai Broker Map
         </a>
-        <a id="claim-link" class="claim" href="#" target="_blank" rel="noopener">For brokers</a>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Ways to search">
+        <button type="button" class="tab" role="tab" id="tab-building" aria-selected="true" aria-controls="sheet-body">By building</button>
+        <button type="button" class="tab" role="tab" id="tab-commute" aria-selected="false" aria-controls="sheet-body">By commute</button>
       </div>
 
       <div class="search" id="search">
@@ -62,37 +74,84 @@
       </div>
     </header>
 
-    <section id="sheet" class="sheet" aria-label="Brokers">
+    <section id="sheet" class="sheet" aria-label="Results">
       <div class="sheet-grab" id="sheet-grab">
         <span class="sheet-handle" aria-hidden="true"></span>
       </div>
 
       <div class="sheet-body" id="sheet-body" tabindex="-1">
-        <div id="intro" class="intro">
-          <h1 class="intro-title">Find the brokers who know your building.</h1>
-          <p class="intro-text">
-            Search the building or society you want to buy in. We pin it and list the real estate agencies around it,
-            nearest first.
-          </p>
-          <div class="popular">
-            <p class="popular-label">Popular searches</p>
-            <div id="popular" class="popular-row"></div>
+        <!-- Building search -->
+        <div id="view-building">
+          <div id="intro" class="intro">
+            <h1 class="intro-title">Find the brokers who know your building.</h1>
+            <p class="intro-text">
+              Search the building or society you want to buy in. We pin it and list the real estate brokers around it,
+              nearest first.
+            </p>
+            <div class="popular">
+              <p class="popular-label">Popular searches</p>
+              <div id="popular" class="popular-row"></div>
+            </div>
+            <div class="area-pick" id="area-pick" hidden>
+              <label class="popular-label" for="area-select">Or browse brokers by area</label>
+              <select id="area-select" class="select">
+                <option value="">Choose an area</option>
+              </select>
+            </div>
           </div>
+
+          <button type="button" id="back-commute" class="back" hidden>← Back to commute results</button>
+          <div id="summary" class="summary" aria-live="polite" hidden></div>
+          <ol id="results" class="results"></ol>
         </div>
 
-        <div id="summary" class="summary" aria-live="polite" hidden></div>
-        <ol id="results" class="results"></ol>
+        <!-- Commute search -->
+        <div id="view-commute" hidden>
+          <form id="commute-form" class="commute-form" novalidate>
+            <h1 class="intro-title">Find the areas that fit your commute.</h1>
+            <p class="intro-text">Tell us where you work and how long you'll travel. We'll show the localities that fit, and the brokers in each.</p>
 
-        <p id="preview-note" class="preview-note" hidden>
-          You're seeing preview mode. The buildings are real; the brokers are made up. Map data © OpenStreetMap contributors.
+            <div class="field">
+              <span class="field-label">Office</span>
+              <p id="office-name" class="office-name is-empty">Search your office in the box above</p>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="max-time">Longest one-way trip <output id="max-time-out" for="max-time">45 min</output></label>
+              <input id="max-time" type="range" min="15" max="90" step="5" value="45" />
+            </div>
+
+            <fieldset class="field">
+              <legend class="field-label">How you'll travel</legend>
+              <div class="mode-row" id="mode-row"></div>
+            </fieldset>
+
+            <details class="field hours">
+              <summary class="field-label">Office hours <span id="hours-out">9:30 AM to 6:30 PM</span></summary>
+              <div class="hours-row">
+                <label>Start <input id="arrive" type="time" value="09:30" min="06:00" max="12:00" /></label>
+                <label>End <input id="leave" type="time" value="18:30" min="15:00" max="23:00" /></label>
+              </div>
+            </details>
+
+            <button type="submit" id="commute-go" class="btn btn-primary btn-wide" disabled>Find areas</button>
+            <p class="fine">Travel times are estimates from Google Maps for a typical weekday and can vary.</p>
+          </form>
+
+          <div id="commute-results" class="commute-results" hidden></div>
+        </div>
+
+        <p id="osm-note" class="note" hidden>
+          Using OpenStreetMap right now to keep this site free. Map data © OpenStreetMap contributors.
         </p>
 
         <footer class="foot">
           <p>
-            Listings come from Google Maps and aren't checked by us. Before you pay a token amount or brokerage,
-            look up the agent on <a href="https://maharera.maharashtra.gov.in" target="_blank" rel="noopener">MahaRERA</a>.
+            Broker details come from public Google Maps listings and aren't checked by us. Before you pay a token amount
+            or brokerage, look up the agent on
+            <a href="https://maharera.maharashtra.gov.in" target="_blank" rel="noopener">MahaRERA</a>.
           </p>
-          <p>We don't save your searches. Each one goes straight to Google Maps.</p>
+          <p>We don't save your searches.</p>
           <p>
             Free and open source on
             <a href="https://github.com/heetsanghvvii/mumbai-broker-map" target="_blank" rel="noopener">GitHub</a>.

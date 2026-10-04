@@ -32,7 +32,7 @@
   --t-2xl: 1.953rem;
 
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --top-h: calc(env(safe-area-inset-top, 0px) + 122px);
+  --top-h: calc(env(safe-area-inset-top, 0px) + 168px);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -366,7 +366,7 @@ button {
     border-radius: 22px;
     box-shadow: var(--shadow-float);
     transform: none;
-    padding-top: 128px;
+    padding-top: 176px;
   }
   .sheet-grab {
     display: none;
@@ -519,21 +519,17 @@ button {
   line-height: 1.3;
   letter-spacing: -0.01em;
 }
-.row-badge {
-  justify-self: start;
-  margin: 2px 0 1px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: var(--green-wash);
-  color: var(--green-deep);
-  font-size: var(--t-xs);
+.row-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--t-sm);
   font-weight: 700;
-  letter-spacing: 0.01em;
 }
-.row.is-verified .row-num,
-.mk-broker.is-verified {
-  background: var(--green);
-  color: var(--green-ink);
+.row-rating svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--green);
 }
 .row-addr {
   font-size: var(--t-sm);
@@ -569,32 +565,15 @@ button {
     transform: translateY(-4px);
   }
 }
-.row-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
+.row-phone {
+  margin: 0;
   font-size: var(--t-sm);
-}
-.row-meta:empty {
-  display: none;
-}
-.meta-rating {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 700;
-}
-.meta-rating svg {
-  width: 15px;
-  height: 15px;
-  fill: var(--green);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .meta-muted {
   color: var(--ink-3);
   font-weight: 400;
-}
-.meta-phone {
-  font-weight: 600;
 }
 .row-actions {
   display: flex;
@@ -690,7 +669,7 @@ button {
 }
 
 /* ---------- notes + footer ---------- */
-.preview-note {
+.note {
   margin: 20px 0 0;
   padding: 10px 12px;
   border-radius: 12px;
@@ -805,11 +784,11 @@ button {
 }
 
 /* preview-mode tiles: quiet OSM colours, inverted for dark mode */
-.preview-tiles {
+.osm-tiles {
   filter: saturate(0.25) contrast(0.92) brightness(1.03);
 }
 @media (prefers-color-scheme: dark) {
-  .preview-tiles {
+  .osm-tiles {
     filter: invert(1) hue-rotate(180deg) saturate(0.25) brightness(0.8) contrast(0.95);
   }
 }
@@ -824,6 +803,292 @@ button {
 }
 .leaflet-control-attribution a {
   color: var(--ink-2);
+}
+
+/* ---------- tabs ---------- */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--scrim);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: var(--shadow-float);
+  pointer-events: auto;
+}
+.tab {
+  height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: background-color 0.15s, color 0.15s;
+}
+.tab[aria-selected='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(14 26 36 / 0.12);
+}
+
+/* ---------- browse by area ---------- */
+.area-pick {
+  margin-top: 20px;
+}
+.select {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--hair);
+  font: inherit;
+  font-size: var(--t-md);
+  color: var(--ink);
+}
+.back {
+  margin: 4px 0 8px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--green-deep);
+}
+
+/* ---------- commute form ---------- */
+.commute-form {
+  display: grid;
+  gap: 18px;
+  padding-top: 6px;
+}
+.commute-form .intro-text {
+  margin-top: -8px;
+}
+.field {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.field-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+.field-label output,
+.field-label span {
+  font-weight: 700;
+  color: var(--green-deep);
+  font-variant-numeric: tabular-nums;
+}
+.office-name {
+  margin: 0;
+  font-weight: 600;
+}
+.office-name.is-empty {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--green);
+}
+.mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mode {
+  position: relative;
+  cursor: pointer;
+}
+.mode input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+}
+.mode span {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--hair);
+  background: var(--paper);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.mode input:checked + span {
+  background: var(--green-wash);
+  box-shadow: inset 0 0 0 1.5px var(--green);
+  color: var(--ink);
+}
+.mode input:focus-visible + span {
+  outline: 2px solid var(--green-deep);
+  outline-offset: 2px;
+}
+.hours summary {
+  cursor: pointer;
+  list-style: none;
+}
+.hours summary::-webkit-details-marker {
+  display: none;
+}
+.hours-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+.hours-row label {
+  display: grid;
+  gap: 4px;
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+.hours-row input {
+  height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--hair);
+  font: inherit;
+  color: var(--ink);
+}
+.btn-wide {
+  width: 100%;
+  height: 46px;
+  font-size: var(--t-md);
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.fine {
+  margin: -6px 0 0;
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+/* ---------- commute results ---------- */
+.commute-results {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hair);
+}
+.loc-dot {
+  color: #fff;
+}
+.loc-times {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.loc-modes {
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+.loc-score {
+  font-weight: 800;
+  color: var(--ink);
+}
+.locked {
+  position: relative;
+  margin-top: 4px;
+}
+.ghost {
+  filter: blur(3px);
+  opacity: 0.7;
+  pointer-events: none;
+  user-select: none;
+}
+.locked-cta {
+  position: absolute;
+  inset: 8px 0 auto;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+}
+.locked-title,
+.map-lock-title {
+  margin: 0;
+  font-weight: 800;
+  font-size: var(--t-md);
+  letter-spacing: -0.01em;
+}
+.locked-text,
+.map-lock-text {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+  max-width: 46ch;
+}
+.locked-cta .fine {
+  margin: 0;
+}
+.locked {
+  min-height: 230px;
+}
+
+/* the map itself is part of the paid view: blurred, with the unlock card on top */
+.map-locked .map {
+  filter: blur(5px) saturate(0.7);
+}
+.map-lock {
+  position: fixed;
+  z-index: 15;
+  top: calc(var(--top-h) + 12px);
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.map-lock-card {
+  display: grid;
+  gap: 8px;
+  max-width: 360px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+  pointer-events: auto;
+}
+@media (min-width: 900px) {
+  .map-lock {
+    top: 50%;
+    left: calc(16px + var(--panel-w) + 24px);
+    transform: translateY(-50%);
+  }
+}
+
+/* office pin: ink label so it reads differently from the green building pin */
+.mk-pin-office .mk-pin-label {
+  background: #17663f;
+  color: #fff;
+}
+.mk-pin-office .mk-pin-dot {
+  background: var(--ink);
 }
 
 /* ---------- hover (mouse and trackpad only) ---------- */

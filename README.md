@@ -1,114 +1,139 @@
 # Mumbai Broker Map
 
-Search a building or society in Mumbai, drop a pin, and see the real estate agencies closest to it, nearest first.
+Find real estate brokers in Mumbai three ways:
 
-- Building search with Google Places Autocomplete, limited to Mumbai
-- Shows the 1 km circle around the building, or widens to 2 km or 3 km when fewer than 5 brokers are inside
-- Each broker shows name, address and distance. Tap a broker to see phone, rating, Call and WhatsApp.
-- Numbered markers match the numbered list, nearest first; tapping either one highlights both
-- Full-screen map with a draggable results sheet on phones and a floating panel on desktop
-- "Claim your profile" link for brokers, pointing to a Google Form
-- Works on phones first; follows light and dark mode
-- No backend. Plain JS and Vite. MIT licensed.
+- **By building**: search a building or society, drop a pin, and see the brokers around it, nearest first.
+- **By area**: pick an area (Andheri, Chembur, Powai…) and see every broker there, most-reviewed first.
+- **By commute**: enter your office, how long you'll travel and how. See which localities fit, using morning and evening traffic, and the brokers in each. The top 3 areas are free; the full map is a ₹99 unlock for 7 days.
 
-Listings come from Google Maps. Buyers should verify any agent on [MahaRERA](https://maharera.maharashtra.gov.in).
+Each broker shows rating, phone, WhatsApp, Call, Google Maps and a "Check on MahaRERA" button. The output is brokers and areas, never house listings.
+
+Plain JS and Vite, Vercel functions for the commute and payments, Supabase for the broker directory. MIT licensed.
 
 ## Run it locally
 
 ```bash
 npm install
-cp .env.example .env      # then paste your key into .env
+cp .env.example .env      # fill in what you have
 npm run dev
 ```
 
-With no key in `.env`, the site runs in **preview mode**: a free OpenStreetMap base map with sample buildings and made-up brokers. That's useful for working on the design without spending any API quota.
+`npm run dev` also serves the `/api` functions. Set `GOOGLE_ROUTES_KEY=simulate` in `.env` to try Commute Search with made-up travel times (about 2 minutes per km) without spending Google quota.
+
+Without a Google key the site still works: it uses OpenStreetMap for the map and place search.
 
 ## Environment variables
 
-| Name | Required | What it is |
+| Name | Where | What it is |
 | --- | --- | --- |
-| `VITE_GOOGLE_MAPS_API_KEY` | yes | Browser key from Google Cloud |
-| `VITE_GOOGLE_MAP_ID` | no | Map ID (vector, JavaScript). Falls back to `DEMO_MAP_ID`. |
-| `VITE_CLAIM_FORM_URL` | no | Your Google Form link for brokers. The "For brokers" link stays hidden until this is set. |
-| `VITE_SUPABASE_URL` | no | Supabase project URL, for verified brokers |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | no | Supabase publishable key |
+| `VITE_GOOGLE_MAPS_API_KEY` | browser | Maps JavaScript + Places key, restricted by website |
+| `VITE_GOOGLE_MAP_ID` | browser | Optional Map ID; falls back to `DEMO_MAP_ID` |
+| `VITE_SUPABASE_URL` | both | Supabase project URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | both | Supabase publishable key (read-only for visitors) |
+| `GOOGLE_ROUTES_KEY` | server | Routes API key for Commute Search. Never sent to the browser. |
+| `COMMUTE_DB_SECRET` | server | Random secret; its SHA-256 goes in `supabase/schema.sql` |
+| `UNLOCK_SECRET` | server | Random secret that signs ₹99 unlock tokens |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | server | Razorpay API keys (test keys first) |
+| `RAZORPAY_WEBHOOK_SECRET` | server | Secret you set on the Razorpay webhook |
+| `COMMUTE_CACHE_HOURS` | server | How long commute results are reused. Default 24. |
+| `COMMUTE_PRICE_PAISE` | server | Unlock price in paise. Default 9900 (₹99). |
 
-The key ends up in the browser bundle. Every Maps JavaScript key does, which is why the restrictions below matter.
+Make random secrets with `openssl rand -hex 32`.
 
-## Google Cloud setup (one time)
+## Google Cloud setup
 
-1. Create a project at [console.cloud.google.com](https://console.cloud.google.com) and attach a billing account. Google needs a card on file even for free usage.
-2. Enable **Maps JavaScript API** and **Places API (New)**.
-3. **Credentials → Create credentials → API key**, then edit the key:
-   - **Application restrictions → Websites (HTTP referrers)**. Add:
-     - `http://localhost:5173/*`
-     - `https://YOUR-PROJECT.vercel.app/*`
-     - any custom domain, e.g. `https://yourdomain.com/*`
-   - **API restrictions → Restrict key** to Maps JavaScript API and Places API (New) only.
-4. Optional: **Google Maps Platform → Map management → Create Map ID** (JavaScript, Vector), then put it in `VITE_GOOGLE_MAP_ID`.
+1. Create a project at [console.cloud.google.com](https://console.cloud.google.com) and attach billing. Google needs a card even for free usage.
+2. Enable **Maps JavaScript API**, **Places API (New)** and **Routes API**.
+3. **Browser key** (`VITE_GOOGLE_MAPS_API_KEY`):
+   - Application restrictions: **Websites**. Add `http://localhost:5173/*` and your site, e.g. `https://mumbai-broker-map.vercel.app/*`.
+   - API restrictions: Maps JavaScript API and Places API (New) only.
+4. **Server key** (`GOOGLE_ROUTES_KEY`), a separate key:
+   - Application restrictions: **None** (Vercel's servers have no fixed IP).
+   - API restrictions: **Routes API** only.
+   - Never put this key in a `VITE_` variable.
 
-## Stay inside the free tier: set daily caps
+## Costs and caps
 
-Google gives free monthly usage per SKU: Essentials 10,000, Pro 5,000, Enterprise 1,000. Set caps in **APIs & Services → [API] → Quotas & system limits** so usage can never go past them.
+Google gives free usage every month per SKU: Essentials 10,000, Pro 5,000, Enterprise 1,000.
 
-| What the site calls | SKU | Free / month | Daily cap to set |
-| --- | --- | --- | --- |
-| Map loads (Maps JavaScript API) | Dynamic Maps, Essentials | 10,000 | **330 map loads/day** |
-| Building search suggestions | Autocomplete, session | free when the session ends in a Place Details call | (covered by the line below) |
-| Pin location after picking a suggestion (`location`, `displayName`) | Place Details Essentials | 10,000 | **330 requests/day** |
-| Brokers near the pin | Nearby Search **Pro** | 5,000 | **160 requests/day** |
-| Phone + rating when a buyer taps a card | Place Details **Enterprise** | 1,000 | **33 requests/day** |
+### Built-in daily caps (enforced by the site)
 
-In Places API (New), set the per-day limits for `SearchNearbyRequest` and `GetPlaceRequest`. Also set a **budget alert** (Billing → Budgets & alerts) of ₹100 so you hear about it if anything slips.
+The site keeps a per-day counter in Supabase and checks it before each billable Google call. When a cap is reached it switches to free OpenStreetMap services (map and search), or tells the visitor to try commute search tomorrow.
 
-Why the design looks like this:
+| What | Google SKU | Cap per day |
+| --- | --- | --- |
+| Google map loads | Dynamic Maps (Essentials) | 300 |
+| Google place searches | Autocomplete session + Place Details Essentials | 300 |
+| Google broker top-up (only when the directory has under 5 brokers within 3 km) | Nearby Search Pro | 150 |
+| Commute, car (free preview / paid) | Route Matrix Pro | 160 / 600 elements |
+| Commute, two-wheeler (free preview / paid) | Route Matrix Enterprise | 30 / 300 elements |
+| Commute, train or metro (free preview / paid) | Route Matrix Essentials | 330 / 1,000 elements |
 
-- **One nearby search per building, not three.** The site asks for the 20 nearest agencies within 3 km, ranked by distance, then picks 1, 2 or 3 km in the browser. That's the same result as retrying at bigger distances, for a third of the calls.
-- **Phone and rating load on tap.** Asking for them in the nearby search moves every search into the Enterprise tier (1,000 free a month). Loading them per card keeps searches in Pro (5,000 free).
+Two-wheeler costs the most, so the free preview leaves it out. It's included in the paid map.
 
-## Google terms
+### Also set Google Cloud quotas as a backstop
 
-Nothing from Google Places is stored or cached. Results live in page memory only and disappear on reload. The URL keeps only the searched text (`?q=`) so links can be shared.
+In **APIs & Services → [API] → Quotas & system limits**, set per-day limits a little above the caps above:
+- **Maps JavaScript API**: map loads per day, 330
+- **Places API (New)**: `GetPlaceRequest` per day, 330, and `SearchNearbyRequest` per day, 160
+- **Routes API**: `ComputeRouteMatrix` elements per day, 2,000
+
+Add a **budget alert** under Billing → Budgets & alerts so you're emailed if anything is ever charged.
+
+### What one visitor costs (after the free allowance)
+
+| Action | Cost |
+| --- | --- |
+| Open the site and search a building | about ₹1 (map load + place search). Broker list comes from Supabase: ₹0 |
+| Commute search, car + train, 25 areas, not cached | about ₹66 |
+| Commute search, all three modes, not cached | about ₹132 |
+| Any commute search for an office within ~1 km of one searched in the last 24 h | ₹0 (cached) |
+
+Each commute search sends at most 25 localities × 2 times (morning, evening) × the selected modes. The element count is logged on every search (`"event":"commute"`).
+
+## Payments (Razorpay)
+
+1. Create a Razorpay account, and use **Test mode** first.
+2. Put the test key ID and secret in Vercel as `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`.
+3. **Settings → Webhooks → Add**: URL `https://YOUR-SITE/api/razorpay-webhook`, events `order.paid` and `payment.captured`, and a secret you also set as `RAZORPAY_WEBHOOK_SECRET`.
+4. Redeploy and buy once with a test card.
+5. Complete KYC, switch to live keys, and redeploy.
+
+How the unlock is protected:
+- The server checks Razorpay's signature and the order status before issuing anything.
+- The unlock is a token signed with `UNLOCK_SECRET`, tied to one office (a ~1 km grid cell) and valid for 7 days.
+- The browser only stores the token. The server checks it on every request and only then returns the full results.
+
+## Supabase setup
+
+1. Create a free project and run `supabase/schema.sql` in the SQL editor. First replace `SERVER_SECRET_SHA256` with the SHA-256 of your `COMMUTE_DB_SECRET`.
+2. Load brokers into `public.brokers` (place ID, area, name, address, phone, rating, location).
+
+Visitors can read the broker directory's public columns. Commute cache, rate limits, payments and the daily counters are only reachable through `broker_map_server()`, which checks the server secret.
 
 ## Deploy to Vercel
 
-1. Import the GitHub repo in Vercel. The framework is detected as Vite, the build command is `npm run build` and the output folder is `dist`.
-2. **Settings → Environment Variables**: add `VITE_GOOGLE_MAPS_API_KEY` (and the optional two), then redeploy.
-3. Add the `*.vercel.app` URL to the key's HTTP referrer list.
-
-## Verified brokers (optional, Supabase)
-
-Brokers who claim their profile can be marked verified. They then appear first in results with a green "Verified · MahaRERA …" badge, and their own WhatsApp number.
-
-1. Create a free Supabase project and run `supabase/schema.sql` in its SQL editor.
-2. Add a row per broker: the Google `place_id` (from the broker's Google Maps link), `verified = true`, their `rera_number` and `broker_whatsapp`.
-3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (Project Settings → API) in Vercel, then redeploy.
-
-Only place IDs are stored from Google. Names, addresses, phones and ratings always come live from Google Maps. Visitors can read verified rows only, and only the columns the page shows. Outreach status and notes stay private.
-
-If Supabase is slow or down, search still works; the badges just don't appear.
-
-## Broker claim form
-
-Create a Google Form with these fields, then put its link in `VITE_CLAIM_FORM_URL`:
-
-1. Full name (short answer, required)
-2. Agency name (short answer)
-3. MahaRERA agent registration number (short answer, required; format `A5xxxxxxxxxx`)
-4. WhatsApp number (short answer, required)
-5. Localities you serve (paragraph, required)
-6. Google Maps link to your office (short answer)
+1. Import the GitHub repo. Vercel detects Vite; functions in `/api` deploy automatically.
+2. Add the environment variables above, then redeploy.
+3. Vercel's free Hobby plan is for non-commercial use. Once you take payments, move the project to a Pro team.
 
 ## Project layout
 
 ```
-index.html            page shell
-src/main.js           search, results, cards
-src/geo.js            distance, radius choice, WhatsApp number check
-src/maps/google.js    Google Maps + Places (New)
-src/maps/preview.js   keyless preview with sample data
-src/maps/markers.js   marker elements shared by both maps
-src/style.css         all styles, light + dark
+index.html              page shell
+src/main.js             building, area and commute views; results; bottom sheet
+src/data.js             broker directory and daily budget (Supabase)
+src/pay.js              Razorpay Checkout and unlock tokens
+src/maps/google.js      Google map, place search, nearby top-up
+src/maps/osm.js         OpenStreetMap map (fallback)
+src/maps/photon.js      OpenStreetMap place search (fallback)
+api/commute.js          Commute Search
+api/pay/order.js        start a ₹99 order
+api/pay/verify.js       confirm payment, issue unlock token
+api/razorpay-webhook.js record paid orders
+api/_lib/               shared server code
+data/localities.json    56 Mumbai localities with centres
+supabase/schema.sql     tables, access rules, server function
 ```
 
 ## License
