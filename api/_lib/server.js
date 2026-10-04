@@ -98,5 +98,5 @@ export function razorpay() {
   return { id, secret, call };
 }
 
-export const PRICE_PAISE = () => Number(env('COMMUTE_PRICE_PAISE', '9900')) || 9900;
+export const PRICE_PAISE = () => Number(env('COMMUTE_PRICE_PAISE', '14900')) || 14900;
 export const UNLOCK_DAYS = 7;

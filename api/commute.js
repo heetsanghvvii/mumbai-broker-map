@@ -1,6 +1,6 @@
 // POST /api/commute — which Mumbai localities fit a commute to an office.
-// Free: the top 3 localities only. Unlocked (₹99, 7 days, this office): everything.
-import { db, env, fail, json, officeKey, readJson, readUnlock, visitorId } from './_lib/server.js';
+// Free: the top 3 localities only. Unlocked (one payment, 7 days, this office): everything.
+import { PRICE_PAISE, db, env, fail, json, officeKey, readJson, readUnlock, visitorId } from './_lib/server.js';
 import { MODES, candidates, commuteTimes, rank } from './_lib/commute.js';
 import { brokerCounts } from './_lib/brokers.js';
 
@@ -12,7 +12,11 @@ const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /** GET /api/commute — whether commute search and payments are switched on (no details). */
 export async function GET() {
-  return json({ ready: !!env('GOOGLE_ROUTES_KEY'), payments: !!(env('RAZORPAY_KEY_ID') && env('RAZORPAY_KEY_SECRET')) });
+  return json({
+    ready: !!env('GOOGLE_ROUTES_KEY'),
+    payments: !!(env('RAZORPAY_KEY_ID') && env('RAZORPAY_KEY_SECRET')),
+    price: PRICE_PAISE() / 100,
+  });
 }
 
 export async function POST(request) {

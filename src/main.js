@@ -619,7 +619,10 @@ function drawCommute() {
   setMapLock(!r.unlocked && r.total > r.localities.length);
 }
 
+const unlockLabel = () => (commuteStatus?.price ? `Unlock full commute map for ₹${commuteStatus.price}` : 'Unlock full commute map');
+
 function setMapLock(on) {
+  $('map-lock').querySelector('.js-unlock').textContent = unlockLabel();
   $('map-lock').hidden = !on;
   document.body.classList.toggle('map-locked', on);
 }
@@ -673,9 +676,10 @@ function renderCommute() {
     for (let i = 0; i < Math.min(4, r.total - r.localities.length); i++) ghost.append(...skeletons(1));
     const cta = document.createElement('div');
     cta.className = 'locked-cta';
-    cta.innerHTML = `<p class="locked-title"></p><p class="locked-text"></p><button type="button" class="btn btn-primary js-unlock">Unlock full commute map for ₹99</button><p class="fine"></p>`;
+    cta.innerHTML = `<p class="locked-title"></p><p class="locked-text"></p><button type="button" class="btn btn-primary js-unlock"></button><p class="fine"></p>`;
     cta.querySelector('.locked-title').textContent = `${r.total - r.localities.length} more areas checked`;
     cta.querySelector('.locked-text').textContent = 'See all of them on a colour-coded map with morning and evening times for every way you travel, and the brokers in each area.';
+    cta.querySelector('.js-unlock').textContent = unlockLabel();
     cta.querySelector('.fine').textContent = 'One-time payment. Valid for 7 days for this office on this device.';
     lock.append(ghost, cta);
     out.append(lock);

@@ -1,4 +1,4 @@
-// ₹99 unlock for Commute Search: Razorpay Checkout in the browser, proof and token from the server.
+// Paid unlock for Commute Search: Razorpay Checkout in the browser, proof and token from the server.
 // The browser only keeps the server-signed token; the server re-checks it on every request.
 
 const KEY = (officeKey) => `mbm-unlock:${officeKey}`;

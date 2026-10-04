@@ -4,7 +4,7 @@ Find real estate brokers in Mumbai three ways:
 
 - **By building**: search a building or society, drop a pin, and see the brokers around it, nearest first.
 - **By area**: pick an area (Andheri, Chembur, Powai…) and see every broker there, most-reviewed first.
-- **By commute**: enter your office, how long you'll travel and how. See which localities fit, using morning and evening traffic, and the brokers in each. The top 3 areas are free; the full map is a ₹99 unlock for 7 days.
+- **By commute**: enter your office, how long you'll travel and how. See which localities fit, using morning and evening traffic, and the brokers in each. The top 3 areas are free; the full map is a one-time unlock (₹149 by default) for 7 days.
 
 Each broker shows rating, phone, WhatsApp, Call, Google Maps and a "Check on MahaRERA" button. The output is brokers and areas, never house listings.
 
@@ -32,11 +32,11 @@ Without a Google key the site still works: it uses OpenStreetMap for the map and
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | both | Supabase publishable key (read-only for visitors) |
 | `GOOGLE_ROUTES_KEY` | server | Routes API key for Commute Search. Never sent to the browser. |
 | `COMMUTE_DB_SECRET` | server | Random secret; its SHA-256 goes in `supabase/schema.sql` |
-| `UNLOCK_SECRET` | server | Random secret that signs ₹99 unlock tokens |
+| `UNLOCK_SECRET` | server | Random secret that signs unlock tokens |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | server | Razorpay API keys (test keys first) |
 | `RAZORPAY_WEBHOOK_SECRET` | server | Secret you set on the Razorpay webhook |
-| `COMMUTE_CACHE_HOURS` | server | How long commute results are reused. Default 24. |
-| `COMMUTE_PRICE_PAISE` | server | Unlock price in paise. Default 9900 (₹99). |
+| `COMMUTE_CACHE_HOURS` | server | How long commute results are reused. Default 168 (7 days). |
+| `COMMUTE_PRICE_PAISE` | server | Unlock price in paise. Default 14900 (₹149). |
 
 Make random secrets with `openssl rand -hex 32`.
 
@@ -87,7 +87,7 @@ Add a **budget alert** under Billing → Budgets & alerts so you're emailed if a
 | Open the site and search a building | about ₹1 (map load + place search). Broker list comes from Supabase: ₹0 |
 | Commute search, car + train, 25 areas, not cached | about ₹66 |
 | Commute search, all three modes, not cached | about ₹132 |
-| Any commute search for an office within ~1 km of one searched in the last 24 h | ₹0 (cached) |
+| Any commute search for an office within ~1 km of one searched in the last 7 days | ₹0 (cached) |
 
 Each commute search sends at most 25 localities × 2 times (morning, evening) × the selected modes. The element count is logged on every search (`"event":"commute"`).
 
@@ -98,6 +98,8 @@ Each commute search sends at most 25 localities × 2 times (morning, evening) ×
 3. **Settings → Webhooks → Add**: URL `https://YOUR-SITE/api/razorpay-webhook`, events `order.paid` and `payment.captured`, and a secret you also set as `RAZORPAY_WEBHOOK_SECRET`.
 4. Redeploy and buy once with a test card.
 5. Complete KYC, switch to live keys, and redeploy.
+
+Price: ₹149 by default (`COMMUTE_PRICE_PAISE`). An uncached all-modes search costs Google about ₹132, so ₹149 plus 7-day caching keeps each sale above cost.
 
 How the unlock is protected:
 - The server checks Razorpay's signature and the order status before issuing anything.
@@ -128,7 +130,7 @@ src/maps/google.js      Google map, place search, nearby top-up
 src/maps/osm.js         OpenStreetMap map (fallback)
 src/maps/photon.js      OpenStreetMap place search (fallback)
 api/commute.js          Commute Search
-api/pay/order.js        start a ₹99 order
+api/pay/order.js        start an unlock order
 api/pay/verify.js       confirm payment, issue unlock token
 api/razorpay-webhook.js record paid orders
 api/_lib/               shared server code

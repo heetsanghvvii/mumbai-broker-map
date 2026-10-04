@@ -21,7 +21,6 @@ export const TRY_QUERIES = [
   ['Kalpataru Aura', 'Kalpataru Aura Ghatkopar'],
 ];
 
-export const COMMUTE_PRICE = '₹99';
 export const COMMUTE_MODES = [
   ['DRIVE', 'Car'],
   ['TWO_WHEELER', 'Two-wheeler'],

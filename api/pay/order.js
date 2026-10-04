@@ -1,4 +1,4 @@
-// POST /api/pay/order — start a ₹99 Razorpay order to unlock Commute Search for one office.
+// POST /api/pay/order — start a Razorpay order to unlock Commute Search for one office.
 import { PRICE_PAISE, db, fail, json, officeKey, razorpay, readJson } from '../_lib/server.js';
 
 export async function POST(request) {

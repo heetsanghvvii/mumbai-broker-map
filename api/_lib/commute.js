@@ -97,7 +97,8 @@ async function timesForMode(mode, office, list, arrive, leave) {
  * mode, timings and locality set) so a later search that adds a mode only pays for that mode.
  */
 export async function commuteTimes({ office, cell, list, modes, arrive, leave, tier }) {
-  const ttl = Number(env('COMMUTE_CACHE_HOURS', '24')) || 24;
+  // Weekday traffic patterns barely move week to week; a week of reuse keeps repeat offices at ₹0.
+  const ttl = Number(env('COMMUTE_CACHE_HOURS', '168')) || 168;
   const setKey = list.map((l) => l.name).join('|');
   const out = {};
   const skipped = [];
