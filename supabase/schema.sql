@@ -27,7 +27,7 @@ create policy "Visitors read verified brokers" on public.brokers
 revoke all on public.brokers from anon, authenticated;
 grant select (place_id, rera_number, broker_whatsapp, verified) on public.brokers to anon, authenticated;
 
-create or replace function public.touch_updated_at() returns trigger
+create or replace function public.broker_map_touch_updated_at() returns trigger
 language plpgsql set search_path = '' as $$
 begin
   new.updated_at := now();
@@ -36,4 +36,4 @@ end $$;
 
 drop trigger if exists brokers_touch on public.brokers;
 create trigger brokers_touch before update on public.brokers
-  for each row execute function public.touch_updated_at();
+  for each row execute function public.broker_map_touch_updated_at();
