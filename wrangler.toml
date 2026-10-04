@@ -1,0 +1,14 @@
+# Cloudflare Pages (free plan, commercial use allowed). Static site from dist/, API from functions/.
+name = "mumbai-broker-map"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Public settings. Secrets (GOOGLE_ROUTES_KEY, COMMUTE_DB_SECRET, UNLOCK_SECRET, ADMIN_PASSWORD,
+# Razorpay keys) are set with `npx wrangler pages secret put NAME`.
+[vars]
+SUPABASE_URL = "https://ftffxrduhlstjhzbxmob.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_MzGaNZe9GihxHMOEulKTMA_LiGRbjN5"
+UPI_ID = "heetsanghvi02-2@okicici"
+COMMUTE_CAP_FREE_PRO = "600"
+COMMUTE_CAP_FREE_ESS = "600"

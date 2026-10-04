@@ -7,3 +7,5 @@ dist
 .DS_Store
 .claude
 brag-output*
+.dev.vars
+.wrangler

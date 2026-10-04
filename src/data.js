@@ -70,10 +70,10 @@ export async function brokersInArea(area) {
   return (await rest(q)).map(toBroker);
 }
 
-/** Areas with broker counts, largest first. */
+/** Areas with broker counts, A to Z. */
 export async function listAreas() {
   if (!ready()) return [];
-  return rest('broker_areas?select=area,brokers,lat,lng&order=brokers.desc');
+  return rest('broker_areas?select=area,brokers,lat,lng&order=area.asc');
 }
 
 export const directoryReady = ready;

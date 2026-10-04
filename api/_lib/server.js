@@ -38,7 +38,8 @@ export async function db(action, args) {
 export const officeKey = (lat, lng) => `${lat.toFixed(2)},${lng.toFixed(2)}`;
 
 export function visitorId(request) {
-  const ip = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
+  const ip =
+    request.headers.get('cf-connecting-ip') || (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
   return createHash('sha256').update(`${ip}|${env('COMMUTE_DB_SECRET')}`).digest('hex').slice(0, 32);
 }
 
