@@ -1,5 +1,22 @@
 # Mumbai Broker Map
 
+> A free, open-source map that helps Mumbai home buyers find a real estate broker near the building they care about. **Live: [mumbai-broker-map.vercel.app](https://mumbai-broker-map.vercel.app)**
+
+![Mumbai Broker Map: 38 brokers within 1 km of Hiranandani Gardens, nearest first](docs/screenshot.jpg)
+
+## The product thinking
+
+| | |
+|---|---|
+| **Problem** | Finding a broker in Mumbai is word of mouth. Buyers can't tell who is active in their building or how well they're rated. |
+| **User** | A home buyer or renter who knows the building or locality (or the office they commute to) but not the broker. |
+| **Solution** | Search by building, area or commute and see brokers sorted nearest or most-reviewed first, with a one-tap Call, WhatsApp and MahaRERA check. |
+| **Scope call** | Output is brokers and areas, never house listings. No broker onboarding or claim flow in v1. |
+| **Monetisation** | The top 3 commute areas are free; the full commute map is a ₹149 unlock for 7 days. Priced just above the Google cost of an uncached search. |
+| **Guardrails** | Every paid Google call checks a spend cap first and falls back to OpenStreetMap, so a spike in traffic can't create a surprise bill. |
+
+## What it does
+
 Find real estate brokers in Mumbai three ways:
 
 - **By building**: search a building or society, drop a pin, and see the brokers around it, nearest first.
