@@ -1,8 +1,8 @@
 // Marker DOM shared by the Google and preview maps. Styled in style.css.
 
-export function brokerMarkerEl(n) {
+export function brokerMarkerEl(n, verified = false) {
   const el = document.createElement('div');
-  el.className = 'mk-broker';
+  el.className = verified ? 'mk-broker is-verified' : 'mk-broker';
   el.textContent = String(n);
   return el;
 }

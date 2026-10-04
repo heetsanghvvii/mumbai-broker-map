@@ -110,9 +110,9 @@ export async function createPreviewProvider(el) {
       pin = L.marker([center.lat, center.lng], { icon: icon(pinMarkerEl(name), [0, 0]), zIndexOffset: 1000 }).addTo(map);
       circle = L.circle([center.lat, center.lng], {
         radius: radiusM,
-        color: '#efa516',
+        color: '#2f9e62',
         weight: 2,
-        fillColor: '#efa516',
+        fillColor: '#2f9e62',
         fillOpacity: 0.08,
         interactive: false,
       }).addTo(map);
@@ -127,7 +127,7 @@ export async function createPreviewProvider(el) {
     showBrokers(list, onSelect) {
       markers.forEach((m) => m.remove());
       markers = list.map((b, i) => {
-        const node = brokerMarkerEl(i + 1);
+        const node = brokerMarkerEl(i + 1, !!b.verified);
         const m = L.marker([b.lat, b.lng], { icon: icon(node, [0, 0]), title: b.name }).addTo(map);
         m.on('click', () => onSelect(b.id));
         m._id = b.id;

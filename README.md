@@ -29,7 +29,9 @@ With no key in `.env`, the site runs in **preview mode**: a free OpenStreetMap b
 | --- | --- | --- |
 | `VITE_GOOGLE_MAPS_API_KEY` | yes | Browser key from Google Cloud |
 | `VITE_GOOGLE_MAP_ID` | no | Map ID (vector, JavaScript). Falls back to `DEMO_MAP_ID`. |
-| `VITE_CLAIM_FORM_URL` | no | Your Google Form link for brokers |
+| `VITE_CLAIM_FORM_URL` | no | Your Google Form link for brokers. The "For brokers" link stays hidden until this is set. |
+| `VITE_SUPABASE_URL` | no | Supabase project URL, for verified brokers |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | no | Supabase publishable key |
 
 The key ends up in the browser bundle. Every Maps JavaScript key does, which is why the restrictions below matter.
 
@@ -73,6 +75,18 @@ Nothing from Google Places is stored or cached. Results live in page memory only
 1. Import the GitHub repo in Vercel. The framework is detected as Vite, the build command is `npm run build` and the output folder is `dist`.
 2. **Settings → Environment Variables**: add `VITE_GOOGLE_MAPS_API_KEY` (and the optional two), then redeploy.
 3. Add the `*.vercel.app` URL to the key's HTTP referrer list.
+
+## Verified brokers (optional, Supabase)
+
+Brokers who claim their profile can be marked verified. They then appear first in results with a green "Verified · MahaRERA …" badge, and their own WhatsApp number.
+
+1. Create a free Supabase project and run `supabase/schema.sql` in its SQL editor.
+2. Add a row per broker: the Google `place_id` (from the broker's Google Maps link), `verified = true`, their `rera_number` and `broker_whatsapp`.
+3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (Project Settings → API) in Vercel, then redeploy.
+
+Only place IDs are stored from Google. Names, addresses, phones and ratings always come live from Google Maps. Visitors can read verified rows only, and only the columns the page shows. Outreach status and notes stay private.
+
+If Supabase is slow or down, search still works; the badges just don't appear.
 
 ## Broker claim form
 

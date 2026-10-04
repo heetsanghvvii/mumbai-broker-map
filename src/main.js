@@ -1,6 +1,7 @@
 import './style.css';
 import { API_KEY, CLAIM_FORM_URL, MIN_RESULTS, RADII_M, TRY_QUERIES } from './config.js';
 import { distanceKm, formatDistance, pickRadius, prefersReducedMotion, whatsappNumber } from './geo.js';
+import { verifiedBrokers } from './verified.js';
 
 const $ = (id) => document.getElementById(id);
 const input = $('search-input');
@@ -13,7 +14,8 @@ const summaryEl = $('summary');
 const resultsEl = $('results');
 const introEl = $('intro');
 
-$('claim-link').href = CLAIM_FORM_URL;
+if (CLAIM_FORM_URL) $('claim-link').href = CLAIM_FORM_URL;
+else $('claim-link').hidden = true;
 
 const desktop = matchMedia('(min-width: 900px)');
 
@@ -210,13 +212,21 @@ async function choose(i) {
 
   try {
     const place = await provider.resolve(s);
+    if (seq !== searchSeq) return; // superseded: skip the broker lookup, the costliest call
     const center = { lat: place.lat, lng: place.lng };
     const raw = await provider.nearby(center, RADII_M[RADII_M.length - 1]);
     if (seq !== searchSeq) return; // a newer search started while this one was loading
     const sorted = raw
       .map((b) => ({ ...b, distanceKm: distanceKm(center, b) }))
       .sort((a, b) => a.distanceKm - b.distanceKm);
-    const { radiusM, items } = pickRadius(sorted, RADII_M, MIN_RESULTS);
+    const picked = pickRadius(sorted, RADII_M, MIN_RESULTS);
+    const verified = await verifiedBrokers(picked.items.map((b) => b.id));
+    if (seq !== searchSeq) return;
+    const { radiusM } = picked;
+    // Verified brokers first; each group stays nearest-first (sort is stable).
+    const items = picked.items
+      .map((b) => ({ ...b, verified: verified.get(b.id) || null }))
+      .sort((a, b) => Number(!!b.verified) - Number(!!a.verified));
 
     // Nearby Search returns at most 20, so a full page means there may be more just as close.
     current = { place, radiusM, brokers: items, capped: raw.length >= 20 && items.length === raw.length, openId: null };
@@ -291,6 +301,7 @@ function row(b, i) {
       <span class="row-num" aria-hidden="true">${i + 1}</span>
       <span class="row-text">
         <span class="row-name"></span>
+        <span class="row-badge" hidden></span>
         <span class="row-addr"></span>
       </span>
       <span class="row-dist">${formatDistance(b.distanceKm)}</span>
@@ -305,6 +316,14 @@ function row(b, i) {
   li.querySelector('.row-name').textContent = b.name;
   li.querySelector('.row-addr').textContent = b.address;
   li.querySelector('.btn-quiet').href = b.mapsUrl;
+  if (b.verified) {
+    li.classList.add('is-verified');
+    const badge = li.querySelector('.row-badge');
+    badge.hidden = false;
+    badge.textContent = b.verified.rera ? `Verified · MahaRERA ${b.verified.rera}` : 'Verified broker';
+    const wa = whatsappNumber(b.verified.whatsapp);
+    if (wa) li.querySelector('.row-actions').prepend(waButton(wa, current.place.name));
+  }
   li.querySelector('.row-main').addEventListener('click', () =>
     select(current.openId === b.id ? null : b.id, 'list'),
   );
@@ -365,14 +384,8 @@ async function loadDetails(b, li, placeName) {
       const wa = whatsappNumber(d.intlPhone);
       const call = linkBtn('Call', 'btn btn-secondary', d.sample ? null : `tel:${(d.intlPhone || d.phone).replace(/[^\d+]/g, '')}`);
       actions.prepend(call);
-      if (wa || d.sample) {
-        const text = `Hi, I found you on Mumbai Broker Map. I'm looking for a home near ${placeName}.`;
-        const waBtn = linkBtn('WhatsApp', 'btn btn-wa', d.sample ? null : `https://wa.me/${wa}?text=${encodeURIComponent(text)}`);
-        waBtn.insertAdjacentHTML(
-          'afterbegin',
-          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5zm5.3 13.3c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.1.1.7-.1 1.4z"/></svg>',
-        );
-        actions.prepend(waBtn);
+      if ((wa || d.sample) && !actions.querySelector('.btn-wa')) {
+        actions.prepend(d.sample ? waButton(null, placeName) : waButton(wa, placeName));
       }
     }
   } catch (err) {
@@ -380,6 +393,17 @@ async function loadDetails(b, li, placeName) {
     btn.disabled = false;
     btn.textContent = 'Didn’t load. Try again';
   }
+}
+
+const WA_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5zm5.3 13.3c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.1.1.7-.1 1.4z"/></svg>';
+
+/** WhatsApp chat button; a null number gives a disabled sample button (preview mode). */
+function waButton(number, placeName) {
+  const text = `Hi, I found you on Mumbai Broker Map. I'm looking for a home near ${placeName}.`;
+  const a = linkBtn('WhatsApp', 'btn btn-wa', number ? `https://wa.me/${number}?text=${encodeURIComponent(text)}` : null);
+  a.insertAdjacentHTML('afterbegin', WA_ICON);
+  return a;
 }
 
 function linkBtn(label, cls, href) {

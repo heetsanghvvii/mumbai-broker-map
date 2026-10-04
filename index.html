@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Mumbai Broker Map</title>
     <meta name="description" content="Search any building in Mumbai and see the real estate brokers within 1 km." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mumbai-broker-map.vercel.app/" />
+    <meta property="og:title" content="Mumbai Broker Map" />
+    <meta property="og:description" content="Search any building in Mumbai. See the brokers who work there, nearest first." />
+    <meta property="og:image" content="https://mumbai-broker-map.vercel.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0b141b" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -16,6 +24,7 @@
     />
   </head>
   <body>
+    <a class="skip" href="#sheet-body">Skip to results</a>
     <div id="map" class="map" aria-label="Map of Mumbai"></div>
 
     <header class="top">
@@ -23,7 +32,7 @@
         <a class="brand" href="/" aria-label="Mumbai Broker Map, start over">
           <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
             <path d="M16 2c-6.1 0-11 4.8-11 10.8C5 20.9 16 30 16 30s11-9.1 11-17.2C27 6.8 22.1 2 16 2z" fill="currentColor" />
-            <circle cx="16" cy="12.6" r="4.2" fill="var(--marigold)" />
+            <circle cx="16" cy="12.6" r="4.2" fill="var(--green)" />
           </svg>
           Mumbai Broker Map
         </a>
@@ -42,6 +51,7 @@
           autocomplete="off"
           spellcheck="false"
           enterkeyhint="search"
+          maxlength="120"
           placeholder="Search a building or society"
           aria-label="Search a building in Mumbai"
         />
@@ -57,7 +67,7 @@
         <span class="sheet-handle" aria-hidden="true"></span>
       </div>
 
-      <div class="sheet-body" id="sheet-body">
+      <div class="sheet-body" id="sheet-body" tabindex="-1">
         <div id="intro" class="intro">
           <h1 class="intro-title">Find the brokers who know your building.</h1>
           <p class="intro-text">
@@ -82,6 +92,7 @@
             Listings come from Google Maps and aren't checked by us. Before you pay a token amount or brokerage,
             look up the agent on <a href="https://maharera.maharashtra.gov.in" target="_blank" rel="noopener">MahaRERA</a>.
           </p>
+          <p>We don't save your searches. Each one goes straight to Google Maps.</p>
           <p>
             Free and open source on
             <a href="https://github.com/heetsanghvvii/mumbai-broker-map" target="_blank" rel="noopener">GitHub</a>.

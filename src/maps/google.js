@@ -130,10 +130,10 @@ export async function createGoogleProvider(el) {
         circle = new Circle({
           map,
           clickable: false,
-          strokeColor: '#efa516',
+          strokeColor: '#2f9e62',
           strokeOpacity: 0.95,
           strokeWeight: 2,
-          fillColor: '#efa516',
+          fillColor: '#2f9e62',
           fillOpacity: 0.08,
         });
       }
@@ -147,7 +147,7 @@ export async function createGoogleProvider(el) {
       markers.forEach(({ m }) => (m.map = null));
       markers = list.map((b, i) => {
         const position = { lat: b.lat, lng: b.lng };
-        const m = new AdvancedMarkerElement({ map, position, content: brokerMarkerEl(i + 1), title: b.name, gmpClickable: true });
+        const m = new AdvancedMarkerElement({ map, position, content: brokerMarkerEl(i + 1, !!b.verified), title: b.name, gmpClickable: true });
         m.addEventListener('gmp-click', () => onSelect(b.id));
         return { m, id: b.id, position };
       });
